@@ -9,7 +9,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o bot ./cmd/bot
 
-FROM alpine:3.20
+FROM alpine:latest
 
 WORKDIR /root/
 
