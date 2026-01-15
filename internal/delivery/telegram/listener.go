@@ -12,7 +12,7 @@ func ParseUpdateToCommand(update tgbotapi.Update) *model.Command {
 		return nil
 	}
 
-	text := update.Message.Text
+	text := strings.TrimSpace(update.Message.Text)
 	if !strings.HasPrefix(text, "/") {
 		return nil
 	}
