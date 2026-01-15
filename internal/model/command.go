@@ -6,6 +6,7 @@ const (
 	CommandUnknown CommandName = "unknown"
 	CommandStart   CommandName = "start"
 	CommandHelp    CommandName = "help"
+	CommandAdd     CommandName = "add"
 )
 
 type Command struct {

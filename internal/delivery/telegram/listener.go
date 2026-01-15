@@ -19,13 +19,15 @@ func ParseUpdateToCommand(update tgbotapi.Update) *model.Command {
 
 	cmdText := strings.TrimPrefix(text, "/")
 
+	cmdWord, args, _ := strings.Cut(cmdText, " ")
 	var name model.CommandName
-
-	switch cmdText {
+	switch cmdWord {
 	case "start":
 		name = model.CommandStart
 	case "help":
 		name = model.CommandHelp
+	case "add":
+		name = model.CommandAdd
 	default:
 		name = model.CommandUnknown
 	}
@@ -35,6 +37,6 @@ func ParseUpdateToCommand(update tgbotapi.Update) *model.Command {
 		ChatID:          update.Message.Chat.ID,
 		UserID:          update.Message.From.ID,
 		UserDisplayName: update.Message.From.UserName,
-		RawArgs:         "",
+		RawArgs:         args,
 	}
 }
