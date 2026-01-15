@@ -10,10 +10,22 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bot_user"]
+      test: ["CMD-SHELL", "pg_isready -U bot"]
       interval: 10s
       timeout: 5s
       retries: 5
-
+  bot:
+    build: .
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: bot
+      DB_NAME: tracker_bot
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 volumes:
   postgres_data:
