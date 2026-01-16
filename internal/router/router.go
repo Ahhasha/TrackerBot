@@ -1,29 +1,48 @@
 package router
 
-import "github.com/Ahhasha/Tracker-bot/internal/model"
+import (
+	"context"
 
-type Router struct{}
+	"github.com/Ahhasha/Tracker-bot/internal/model"
+)
 
-func New() *Router {
-	return &Router{}
+type Router struct {
+	handlers map[model.CommandName]Handler
 }
 
-func (r *Router) Route(cmd *model.Command) model.Result {
-	switch cmd.Name {
-	case model.CommandStart:
+func New(handlers map[model.CommandName]Handler) *Router {
+	if handlers == nil {
+		handlers = make(map[model.CommandName]Handler)
+	}
+	return &Router{handlers: handlers}
+}
+
+func (r *Router) Route(ctx context.Context, cmd *model.Command) model.Result {
+	if cmd == nil {
 		return model.Result{
-			ChatID: cmd.ChatID,
-			Text:   "/start ready",
-		}
-	case model.CommandHelp:
-		return model.Result{
-			ChatID: cmd.ChatID,
-			Text:   "/help find not ready",
-		}
-	default:
-		return model.Result{
-			ChatID: cmd.ChatID,
-			Text:   "Чё прислал - непонятно",
+			ChatID: 0,
+			Text:   "Unknown command",
 		}
 	}
+
+	h, ok := r.handlers[cmd.Name]
+	if !ok || h == nil {
+		return model.Result{
+			ChatID: cmd.ChatID,
+			Text:   "Unknown command, use /help",
+		}
+	}
+
+	res, err := h.Handle(ctx, cmd)
+	if err != nil {
+		return model.Result{
+			ChatID: cmd.ChatID,
+			Text:   "Error. Please try again later.",
+		}
+	}
+
+	if res.ChatID == 0 {
+		res.ChatID = cmd.ChatID
+	}
+	return res
 }
