@@ -1,21 +1,26 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
 	"github.com/Ahhasha/Tracker-bot/internal/delivery/telegram"
+	"github.com/Ahhasha/Tracker-bot/internal/handlers/start"
+	"github.com/Ahhasha/Tracker-bot/internal/model"
 	"github.com/Ahhasha/Tracker-bot/internal/router"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	_ = godotenv.Load()
+	ctx := context.Background()
 
 	token := os.Getenv("TELEGRAM_BOT_TOKEN")
 	if token == "" {
-		log.Fatal("TELEGRAM_BOT_TOKEN is not set")
+		log.Fatalf("TELEGRAM_BOT_TOKEN is not set")
 	}
 
 	bot, err := tgbotapi.NewBotAPI(token)
@@ -26,7 +31,11 @@ func main() {
 	u.Timeout = 60
 	updates := bot.GetUpdatesChan(u)
 
-	r := router.New()
+	startHandler := start.New()
+
+	r := router.New(map[model.CommandName]router.Handler{
+		model.CommandStart: startHandler,
+	})
 
 	for update := range updates {
 		cmd := telegram.ParseUpdateToCommand(update)
@@ -34,9 +43,7 @@ func main() {
 			continue
 		}
 
-		log.Printf("command=%s chat_id=%d user_id=%d args=%q", cmd.Name, cmd.ChatID, cmd.UserID, cmd.RawArgs)
-
-		res := r.Route(cmd)
+		res := r.Route(ctx, cmd)
 
 		msg := tgbotapi.NewMessage(res.ChatID, res.Text)
 		if _, err := bot.Send(msg); err != nil {
