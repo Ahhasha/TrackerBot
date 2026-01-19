@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"sync"
@@ -19,13 +19,19 @@ import (
 )
 
 func main() {
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+
 	if err := godotenv.Load(); err != nil {
-		log.Println(".env file not found")
+		logger.Info(".env file not found")
 	}
 
 	token := os.Getenv("TELEGRAM_BOT_TOKEN")
 	if token == "" {
-		log.Fatalf("TELEGRAM_BOT_TOKEN is not set")
+		logger.Error("TELEGRAM_BOT_TOKEN is not set")
+		os.Exit(1)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -33,25 +39,26 @@ func main() {
 
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
-		log.Fatalf("create bot api: %v", err)
+		logger.Error("create bot api:", slog.Any("err", err))
+		os.Exit(1)
 	}
 
-	startHandler := start.New()
+	startHandler := start.New(logger)
 	r := router.New(map[model.CommandName]router.Handler{
 		model.CommandStart: startHandler,
-	})
+	}, logger)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		runBot(ctx, bot, r)
+		runBot(ctx, bot, r, logger)
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-quit
-	log.Printf("shutting down: %v", sig)
+	logger.Info("shutting down", slog.String("signal", sig.String()))
 	bot.StopReceivingUpdates()
 	cancel()
 
@@ -66,13 +73,13 @@ func main() {
 
 	select {
 	case <-done:
-		log.Println("bot stopped")
+		logger.Info("bot stopped")
 	case <-shutdownCtx.Done():
-		log.Println("exiting(timeout)")
+		logger.Warn("exiting(timeout)")
 	}
 }
 
-func runBot(ctx context.Context, bot *tgbotapi.BotAPI, r *router.Router) {
+func runBot(ctx context.Context, bot *tgbotapi.BotAPI, r *router.Router, logger *slog.Logger) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates := bot.GetUpdatesChan(u)
@@ -93,7 +100,7 @@ func runBot(ctx context.Context, bot *tgbotapi.BotAPI, r *router.Router) {
 
 			msg := tgbotapi.NewMessage(res.ChatID, res.Text)
 			if _, err := bot.Send(msg); err != nil {
-				log.Printf("send error: %v", err)
+				logger.Error("send error", slog.Any("err", err), slog.Int64("chat_id", res.ChatID))
 			}
 		}
 	}

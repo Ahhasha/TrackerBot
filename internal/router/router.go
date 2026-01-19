@@ -2,19 +2,21 @@ package router
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 )
 
 type Router struct {
 	handlers map[model.CommandName]Handler
+	lgr      *slog.Logger
 }
 
-func New(handlers map[model.CommandName]Handler) *Router {
-	if handlers == nil {
-		handlers = make(map[model.CommandName]Handler)
+func New(handlers map[model.CommandName]Handler, lgr *slog.Logger) *Router {
+	return &Router{
+		handlers: handlers,
+		lgr:      lgr,
 	}
-	return &Router{handlers: handlers}
 }
 
 func (r *Router) Route(ctx context.Context, cmd *model.Command) model.Result {
@@ -26,18 +28,20 @@ func (r *Router) Route(ctx context.Context, cmd *model.Command) model.Result {
 	}
 
 	h, ok := r.handlers[cmd.Name]
-	if !ok || h == nil {
+	if !ok {
+		r.lgr.Info("unknown command", slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("user_id", cmd.UserID))
 		return model.Result{
 			ChatID: cmd.ChatID,
-			Text:   "Unknown command, use /help",
+			Text:   "Неизвестная команда, используйте /help",
 		}
 	}
 
 	res, err := h.Handle(ctx, cmd)
 	if err != nil {
+		r.lgr.Error("Handler error", slog.Any("err", err), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("user_id", cmd.UserID))
 		return model.Result{
 			ChatID: cmd.ChatID,
-			Text:   "Error. Please try again later.",
+			Text:   "Произошла ошибка, попробуйте позже.",
 		}
 	}
 
