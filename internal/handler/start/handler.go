@@ -17,6 +17,6 @@ func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result,
 
 	return model.Result{
 		ChatID: cmd.ChatID,
-		Text:   "Саламчииик",
+		Text:   "Приветик, курочки!",
 	}, nil
 }

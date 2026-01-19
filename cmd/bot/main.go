@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/Ahhasha/Tracker-bot/internal/delivery/telegram"
-	"github.com/Ahhasha/Tracker-bot/internal/handlers/start"
+	"github.com/Ahhasha/Tracker-bot/internal/handler/start"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 	"github.com/Ahhasha/Tracker-bot/internal/router"
 
