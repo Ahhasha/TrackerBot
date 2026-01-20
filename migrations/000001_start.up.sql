@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS users (
     id         BIGSERIAL PRIMARY KEY,
     tg_id      BIGINT NOT NULL UNIQUE,
-    username   TEXT NOT NULL DEFAULT '',
+    username   TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
