@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Ahhasha/Tracker-bot/internal/config"
+	"github.com/Ahhasha/Tracker-bot/internal/database"
 	"github.com/Ahhasha/Tracker-bot/internal/delivery/telegram"
 	"github.com/Ahhasha/Tracker-bot/internal/handler/start"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
@@ -29,20 +31,27 @@ func main() {
 		logger.Info(".env file not found")
 	}
 
-	token := os.Getenv("TELEGRAM_BOT_TOKEN")
-	if token == "" {
-		logger.Error("TELEGRAM_BOT_TOKEN is not set")
+	cfg, err := config.Load()
+	if err != nil {
+		logger.Error("invalid config", slog.Any("err", err))
 		os.Exit(1)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	bot, err := tgbotapi.NewBotAPI(token)
+	bot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
 	if err != nil {
 		logger.Error("create bot api:", slog.Any("err", err))
 		os.Exit(1)
 	}
+
+	pool, err := database.NewPool(ctx, cfg)
+	if err != nil {
+		logger.Error("db init failed", slog.Any("err", err))
+		os.Exit(1)
+	}
+	defer pool.Close()
 
 	regService := serv.NewService(pool)
 	startHandler := start.New(logger, regService)
