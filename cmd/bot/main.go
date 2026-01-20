@@ -13,6 +13,7 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/handler/start"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 	"github.com/Ahhasha/Tracker-bot/internal/router"
+	serv "github.com/Ahhasha/Tracker-bot/internal/service/start"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -43,7 +44,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	startHandler := start.New(logger)
+	regService := serv.NewService(pool)
+	startHandler := start.New(logger, regService)
+
 	r := router.New(map[model.CommandName]router.Handler{
 		model.CommandStart: startHandler,
 	}, logger)
