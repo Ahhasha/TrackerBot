@@ -15,30 +15,25 @@ func NewRepo(db contracts.DBTX) *Repo {
 	return &Repo{db: db}
 }
 
-func (r *Repo) UserExists(ctx context.Context, tgID int64) (bool, error) {
-	const q = `SELECT EXISTS(SELECT 1 FROM users WHERE tg_id = $1)`
+func (r *Repo) UpsertUser(ctx context.Context, tgID int64, username string) (int64, bool, error) {
+	const op = "repo.start.UpsertUser"
 
-	var exists bool
-	err := r.db.QueryRow(ctx, q, tgID).Scan(&exists)
-	if err != nil {
-		return false, fmt.Errorf("check user exists %d: %w", tgID, err)
-	}
-	return exists, nil
-}
-
-func (r *Repo) Create(ctx context.Context, tgID int64, username string) (int64, error) {
 	const q = `
-INSERT INTO users (tg_id, username)
-VALUES ($1, $2)
-RETURNING id, tg_id, username, created_at
-`
+		INSERT INTO users (tg_id, username)
+		VALUES ($1, $2)
+		ON CONFLICT (tg_id) DO UPDATE
+		SET username = EXCLUDED.username
+		RETURNING id, (xmax = 0) AS created;
+	`
 
-	var userID int64
-	err := r.db.QueryRow(ctx, q, tgID, username).Scan(&userID)
-	if err != nil {
-		return 0, fmt.Errorf("create user %d, %s: %w", tgID, username, err)
+	var id int64
+	var created bool
+
+	if err := r.db.QueryRow(ctx, q, tgID, username).Scan(&id, &created); err != nil {
+		return 0, false, fmt.Errorf("%s: queryrow scan: %w", op, err)
 	}
-	return userID, nil
+
+	return id, created, nil
 }
 
 func (r *Repo) CreateDefaultCategory(ctx context.Context, userID int64) error {
