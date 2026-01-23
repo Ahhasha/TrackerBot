@@ -14,6 +14,7 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/delivery/telegram"
 	"github.com/Ahhasha/Tracker-bot/internal/handler/start"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
+	repoStart "github.com/Ahhasha/Tracker-bot/internal/repository/start"
 	"github.com/Ahhasha/Tracker-bot/internal/router"
 	serv "github.com/Ahhasha/Tracker-bot/internal/service/start"
 
@@ -53,7 +54,8 @@ func main() {
 	}
 	defer pool.Close()
 
-	regService := serv.NewService(pool)
+	repo := repoStart.NewRepo(pool)
+	regService := serv.NewService(pool, logger, repo)
 	startHandler := start.New(logger, regService)
 
 	r := router.New(map[model.CommandName]router.Handler{
