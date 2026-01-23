@@ -6,58 +6,56 @@ import (
 	"log/slog"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
-	repoStart "github.com/Ahhasha/Tracker-bot/internal/repository/start"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	startuc "github.com/Ahhasha/Tracker-bot/internal/start"
 )
 
 type Service struct {
-	pool   *pgxpool.Pool
+	tx     startuc.TxManager
+	repo   startuc.RegistrationRepo
 	logger *slog.Logger
-	repo   contracts.RegistrationRepo
 }
 
-func NewService(pool *pgxpool.Pool, logger *slog.Logger, repo contracts.RegistrationRepo) *Service {
+func NewService(tx startuc.TxManager, repo startuc.RegistrationRepo, logger *slog.Logger) *Service {
 	return &Service{
-		pool:   pool,
-		logger: logger,
+		tx:     tx,
 		repo:   repo,
+		logger: logger,
 	}
 }
 
-func (s *Service) RegIfNotExist(ctx context.Context, tgID int64, username string) error {
-	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return fmt.Errorf("begin transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
+func (s *Service) RegIfNotExist(ctx context.Context, tgID int64, username string) (startuc.RegisterResult, error) {
+	const op = "service.start.Register"
+	var res startuc.RegisterResult
 
-	repoWithTx := repoStart.NewRepo(tx)
+	err := s.tx.Do(ctx, func(db contracts.DBTX) error {
+		userID, created, err := s.repo.UpsertUser(ctx, db, tgID, username)
+		if err != nil {
+			return fmt.Errorf("%s: upset user: %w", op, err)
+		}
 
-	exists, err := repoWithTx.UserExists(ctx, tgID)
-	if err != nil {
-		return fmt.Errorf("check user exists: %w", err)
-	}
+		res.UserID = userID
+		res.Created = created
 
-	if exists {
-		s.logger.Info("user already exists", slog.Int64("tg_id", tgID))
+		if !created {
+			return nil
+		}
+
+		cats, err := s.repo.CreateDefaultCategories(ctx, db, userID)
+		if err != nil {
+			fmt.Errorf("%s: create default categories: %w", op, err)
+		}
+
+		res.CategoriesCreated = cats
 		return nil
-	}
-
-	userID, err := repoWithTx.Create(ctx, tgID, username)
+	})
 	if err != nil {
-		return fmt.Errorf("create user: %w", err)
+		return startuc.RegisterResult{}, err
 	}
 
-	if err := repoWithTx.CreateDefaultCategory(ctx, userID); err != nil {
-		return fmt.Errorf("create default categories: %w", err)
+	if res.Created {
+		s.logger.Info("user registered", slog.Int64("tg_id", tgID), slog.Int64("user_id", res.UserID))
+	} else {
+		s.logger.Info("user already exists", slog.Int64("tg_id", tgID), slog.Int64("user_id", res.UserID))
 	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit transaction: %w", err)
-	}
-
-	s.logger.Info("user registered", slog.Int64("tg_id", tgID), slog.Int64("user_id", userID))
-	return nil
+	return res, nil
 }
