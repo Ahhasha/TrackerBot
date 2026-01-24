@@ -2,6 +2,7 @@ package start
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
 	"testing"
@@ -101,6 +102,32 @@ func TestService_Register_ExistingUser_DoesNotCreateDefaultCategories(t *testing
 	require.Equal(t, int64(42), res.UserID)
 
 	require.Len(t, res.CategoriesCreated, 0)
+
+	require.Equal(t, 1, tx.calls)
+	require.Equal(t, 1, repo.upsertCalls)
+	require.Equal(t, 0, repo.catsCalls)
+}
+
+func TestService_Register_UpsertFails_ReturnsError(t *testing.T) {
+	ctx := context.Background()
+	expErr := errors.New("db down")
+	tx := &fakeTxManager{}
+
+	repo := &fakeRepo{
+		upsertFn: func(ctx context.Context, db contracts.DBTX, tgID int64, username string) (int64, bool, error) {
+			return 0, false, expErr
+		},
+		catsFn: func(ctx context.Context, db contracts.DBTX, userID int64) ([]string, error) {
+			t.Fatalf("CreateDefaultCategories NOT CALLED")
+			return nil, nil
+		},
+	}
+
+	svc := NewService(tx, repo, testLogger())
+
+	_, err := svc.Register(ctx, 1001, "alice")
+	require.Error(t, err)
+	require.True(t, errors.Is(err, expErr))
 
 	require.Equal(t, 1, tx.calls)
 	require.Equal(t, 1, repo.upsertCalls)
