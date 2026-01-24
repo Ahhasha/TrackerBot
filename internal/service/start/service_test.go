@@ -133,3 +133,33 @@ func TestService_Register_UpsertFails_ReturnsError(t *testing.T) {
 	require.Equal(t, 1, repo.upsertCalls)
 	require.Equal(t, 0, repo.catsCalls)
 }
+
+func TestService_Register_TxManagerFails_ReturnsError(t *testing.T) {
+	ctx := context.Background()
+	expErr := errors.New("cannot begin tx")
+
+	tx := &fakeTxManager{
+		err: expErr,
+	}
+
+	repo := &fakeRepo{
+		upsertFn: func(ctx context.Context, db contracts.DBTX, tgID int64, username string) (int64, bool, error) {
+			t.Fatalf("UpsertUser NOT called")
+			return 0, false, nil
+		},
+		catsFn: func(ctx context.Context, db contracts.DBTX, userID int64) ([]string, error) {
+			t.Fatalf("CreateDefaultCategories NOT called")
+			return nil, nil
+		},
+	}
+
+	svc := NewService(tx, repo, testLogger())
+
+	_, err := svc.Register(ctx, 1001, "alice")
+	require.Error(t, err)
+	require.True(t, errors.Is(err, expErr))
+
+	require.Equal(t, 1, tx.calls)
+	require.Equal(t, 0, repo.upsertCalls)
+	require.Equal(t, 0, repo.catsCalls)
+}
