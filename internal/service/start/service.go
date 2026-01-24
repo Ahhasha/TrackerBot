@@ -23,7 +23,7 @@ func NewService(tx start.TxManager, repo start.RegistrationRepo, logger *slog.Lo
 	}
 }
 
-func (s *Service) RegIfNotExist(ctx context.Context, tgID int64, username string) (start.RegisterResult, error) {
+func (s *Service) Register(ctx context.Context, tgID int64, username string) (start.RegisterResult, error) {
 	const op = "service.start.Register"
 	var res start.RegisterResult
 

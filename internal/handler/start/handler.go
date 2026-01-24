@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/Ahhasha/Tracker-bot/internal/model"
+	"github.com/Ahhasha/Tracker-bot/internal/start"
 )
 
 type regService interface {
-	RegIfNotExist(ctx context.Context, tgID int64, username string) error
+	Register(ctx context.Context, tgID int64, username string) (start.RegisterResult, error)
 }
 
 type Handler struct {
@@ -27,7 +29,8 @@ func New(lgr *slog.Logger, reg regService) *Handler {
 func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result, error) {
 	h.lgr.Info("start command", slog.Int64("chat_id", cmd.ChatID), slog.Int64("user_id", cmd.UserID), slog.String("username", cmd.UserDisplayName))
 
-	if err := h.reg.RegIfNotExist(ctx, cmd.UserID, cmd.UserDisplayName); err != nil {
+	res, err := h.reg.Register(ctx, cmd.UserID, cmd.UserDisplayName)
+	if err != nil {
 		h.lgr.Error("register user failed", slog.Any("err", err), slog.Int64("chat_id", cmd.ChatID), slog.Int64("user_id", cmd.UserID))
 
 		return model.Result{
@@ -36,8 +39,29 @@ func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result,
 		}, nil
 	}
 
+	if res.Created {
+		var b strings.Builder
+		for _, c := range res.CategoriesCreated {
+			b.WriteString("• ")
+			b.WriteString(c)
+			b.WriteString("\n")
+		}
+		catsText := strings.TrimRight(b.String(), "\n")
+
+		return model.Result{
+			ChatID: cmd.ChatID,
+			Text: fmt.Sprintf("👋 Добро пожаловать в Expense Tracker!\n"+
+				"Я помогу вам отслеживать расходы и управлять бюджетами.\n\n"+
+				"✅ Вы зарегистрированы!\n"+
+				"📂 Созданы базовые категории:\n"+
+				"%s\n\n"+
+				"Используйте /help для списка команд.",
+				catsText,
+			),
+		}, nil
+	}
 	return model.Result{
 		ChatID: cmd.ChatID,
-		Text:   fmt.Sprintf("🐤🐤🐤Приветик курочка по имени %s, ты прошёл(ла) регистрацию!", cmd.UserDisplayName),
+		Text:   "✅ Вы уже зарегистрированы! Используйте /help для списка команд.",
 	}, nil
 }
