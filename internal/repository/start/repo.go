@@ -37,6 +37,7 @@ func (r *Repo) UpsertUser(ctx context.Context, tgID int64, username string) (int
 }
 
 func (r *Repo) CreateDefaultCategory(ctx context.Context, userID int64) error {
+	const op = "repo.start.CreateDefaultCategory"
 	defaults := []string{
 		"Еда",
 		"Транспорт",
@@ -52,7 +53,7 @@ func (r *Repo) CreateDefaultCategory(ctx context.Context, userID int64) error {
 
 	for _, name := range defaults {
 		if _, err := r.db.Exec(ctx, q, userID, name); err != nil {
-			return fmt.Errorf("insert default category %q: %w", name, err)
+			return fmt.Errorf("%s: Exec %q: %w", op, name, err)
 		}
 	}
 	return nil
