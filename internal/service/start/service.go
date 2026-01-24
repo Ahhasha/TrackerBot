@@ -6,16 +6,16 @@ import (
 	"log/slog"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
-	startuc "github.com/Ahhasha/Tracker-bot/internal/start"
+	"github.com/Ahhasha/Tracker-bot/internal/start"
 )
 
 type Service struct {
-	tx     startuc.TxManager
-	repo   startuc.RegistrationRepo
+	tx     start.TxManager
+	repo   start.RegistrationRepo
 	logger *slog.Logger
 }
 
-func NewService(tx startuc.TxManager, repo startuc.RegistrationRepo, logger *slog.Logger) *Service {
+func NewService(tx start.TxManager, repo start.RegistrationRepo, logger *slog.Logger) *Service {
 	return &Service{
 		tx:     tx,
 		repo:   repo,
@@ -23,9 +23,9 @@ func NewService(tx startuc.TxManager, repo startuc.RegistrationRepo, logger *slo
 	}
 }
 
-func (s *Service) RegIfNotExist(ctx context.Context, tgID int64, username string) (startuc.RegisterResult, error) {
+func (s *Service) RegIfNotExist(ctx context.Context, tgID int64, username string) (start.RegisterResult, error) {
 	const op = "service.start.Register"
-	var res startuc.RegisterResult
+	var res start.RegisterResult
 
 	err := s.tx.Do(ctx, func(db contracts.DBTX) error {
 		userID, created, err := s.repo.UpsertUser(ctx, db, tgID, username)
@@ -42,14 +42,14 @@ func (s *Service) RegIfNotExist(ctx context.Context, tgID int64, username string
 
 		cats, err := s.repo.CreateDefaultCategories(ctx, db, userID)
 		if err != nil {
-			fmt.Errorf("%s: create default categories: %w", op, err)
+			return fmt.Errorf("%s: create default categories: %w", op, err)
 		}
 
 		res.CategoriesCreated = cats
 		return nil
 	})
 	if err != nil {
-		return startuc.RegisterResult{}, err
+		return start.RegisterResult{}, err
 	}
 
 	if res.Created {

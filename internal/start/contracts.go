@@ -22,5 +22,5 @@ type RegisterResult struct {
 }
 
 type RegistrationService interface {
-	Register(ctx context.Context, tgID int64, username string) (RegisterResult, error)
+	RegIfNotExist(ctx context.Context, tgID int64, username string) (RegisterResult, error)
 }
