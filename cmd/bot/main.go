@@ -54,8 +54,9 @@ func main() {
 	}
 	defer pool.Close()
 
-	repo := repoStart.NewRepo(pool)
-	regService := serv.NewService(pool, logger, repo)
+	txManager := database.NewTxManager(pool)
+	repo := repoStart.NewRepo()
+	regService := serv.NewService(txManager, repo, logger)
 	startHandler := start.New(logger, regService)
 
 	r := router.New(map[model.CommandName]router.Handler{

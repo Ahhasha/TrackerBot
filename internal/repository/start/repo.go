@@ -11,7 +11,7 @@ import (
 
 type Repo struct{}
 
-func NewRepo(db contracts.DBTX) *Repo {
+func NewRepo() *Repo {
 	return &Repo{}
 }
 
