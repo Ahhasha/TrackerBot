@@ -24,6 +24,17 @@ func NewBot(bot *tgbot.BotAPI, r *router.Router, log *slog.Logger) *App {
 }
 
 func (a *App) Run(ctx context.Context) error {
-	_ = ctx
-	return nil
+	updatesCh := make(chan tgbot.Update, 100)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- a.updateReader(ctx, updatesCh)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-errCh:
+		return err
+	}
 }
