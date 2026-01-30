@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Ahhasha/Tracker-bot/internal/app"
 	"github.com/Ahhasha/Tracker-bot/internal/config"
 	"github.com/Ahhasha/Tracker-bot/internal/database"
-	"github.com/Ahhasha/Tracker-bot/internal/delivery/telegram"
 	"github.com/Ahhasha/Tracker-bot/internal/handler/start"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 	repoStart "github.com/Ahhasha/Tracker-bot/internal/repository/start"
@@ -63,11 +63,16 @@ func main() {
 		model.CommandStart: startHandler,
 	}, logger)
 
+	app := app.NewBot(bot, r, logger)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		runBot(ctx, bot, r, logger)
+		if err := app.Run(ctx); err != nil {
+			logger.Error("app stopped with error", slog.Any("err", err))
+			cancel()
+		}
 	}()
 
 	quit := make(chan os.Signal, 1)
@@ -91,32 +96,5 @@ func main() {
 		logger.Info("bot stopped")
 	case <-shutdownCtx.Done():
 		logger.Warn("exiting(timeout)")
-	}
-}
-
-func runBot(ctx context.Context, bot *tgbotapi.BotAPI, r *router.Router, logger *slog.Logger) {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-	updates := bot.GetUpdatesChan(u)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case update, ok := <-updates:
-			if !ok {
-				return
-			}
-			cmd := telegram.ParseUpdateToCommand(update)
-			if cmd == nil {
-				continue
-			}
-			res := r.Route(ctx, cmd)
-
-			msg := tgbotapi.NewMessage(res.ChatID, res.Text)
-			if _, err := bot.Send(msg); err != nil {
-				logger.Error("send error", slog.Any("err", err), slog.Int64("chat_id", res.ChatID))
-			}
-		}
 	}
 }
