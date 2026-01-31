@@ -6,16 +6,16 @@ import (
 	"log/slog"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
-	"github.com/Ahhasha/Tracker-bot/internal/start"
+	startcont "github.com/Ahhasha/Tracker-bot/internal/contracts/start"
 )
 
 type Service struct {
-	tx     start.TxManager
-	repo   start.RegistrationRepo
+	tx     startcont.TxManager
+	repo   startcont.RegistrationRepo
 	logger *slog.Logger
 }
 
-func NewService(tx start.TxManager, repo start.RegistrationRepo, logger *slog.Logger) *Service {
+func NewService(tx startcont.TxManager, repo startcont.RegistrationRepo, logger *slog.Logger) *Service {
 	return &Service{
 		tx:     tx,
 		repo:   repo,
@@ -23,9 +23,9 @@ func NewService(tx start.TxManager, repo start.RegistrationRepo, logger *slog.Lo
 	}
 }
 
-func (s *Service) Register(ctx context.Context, tgID int64, username string) (start.RegisterResult, error) {
+func (s *Service) Register(ctx context.Context, tgID int64, username string) (startcont.RegisterResult, error) {
 	const op = "service.start.Register"
-	var res start.RegisterResult
+	var res startcont.RegisterResult
 
 	err := s.tx.Do(ctx, func(db contracts.DBTX) error {
 		userID, created, err := s.repo.UpsertUser(ctx, db, tgID, username)
@@ -49,7 +49,7 @@ func (s *Service) Register(ctx context.Context, tgID int64, username string) (st
 		return nil
 	})
 	if err != nil {
-		return start.RegisterResult{}, err
+		return startcont.RegisterResult{}, err
 	}
 
 	if res.Created {

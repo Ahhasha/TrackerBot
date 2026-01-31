@@ -6,12 +6,12 @@ import (
 	"log/slog"
 	"strings"
 
+	startcont "github.com/Ahhasha/Tracker-bot/internal/contracts/start"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
-	"github.com/Ahhasha/Tracker-bot/internal/start"
 )
 
 type regService interface {
-	Register(ctx context.Context, tgID int64, username string) (start.RegisterResult, error)
+	Register(ctx context.Context, tgID int64, username string) (startcont.RegisterResult, error)
 }
 
 type Handler struct {
