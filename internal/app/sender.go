@@ -19,10 +19,7 @@ func (a *App) sender(ctx context.Context, resultsCh <-chan model.Result) {
 			}
 			msg := tgbot.NewMessage(res.ChatID, res.Text)
 			if _, err := a.bot.Send(msg); err != nil {
-				a.log.Error("send error",
-					"err", err,
-					"chat_id", res.ChatID,
-				)
+				a.log.Error("send error", "err", err, "chat_id", res.ChatID)
 			}
 		}
 	}

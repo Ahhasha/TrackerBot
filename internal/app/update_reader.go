@@ -23,7 +23,6 @@ func (a *App) updateReader(ctx context.Context, updatesCh chan<- tgbot.Update) e
 			}
 			select {
 			case updatesCh <- upd:
-				// апдейт ушёл воркерам (позже)
 			case <-ctx.Done():
 				return nil
 			default:
