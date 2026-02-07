@@ -9,21 +9,21 @@ import (
 	startcont "github.com/Ahhasha/Tracker-bot/internal/contracts/start"
 )
 
-type Service struct {
+type service struct {
 	tx     contracts.TxManager
 	repo   startcont.RegistrationRepo
 	logger *slog.Logger
 }
 
-func NewService(tx contracts.TxManager, repo startcont.RegistrationRepo, logger *slog.Logger) *Service {
-	return &Service{
+func NewService(tx contracts.TxManager, repo startcont.RegistrationRepo, logger *slog.Logger) startcont.RegistrationService {
+	return &service{
 		tx:     tx,
 		repo:   repo,
 		logger: logger,
 	}
 }
 
-func (s *Service) Register(ctx context.Context, tgID int64, username string) (startcont.RegisterResult, error) {
+func (s *service) Register(ctx context.Context, tgID int64, username string) (startcont.RegisterResult, error) {
 	const op = "service.start.Register"
 	var res startcont.RegisterResult
 

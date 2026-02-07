@@ -11,15 +11,15 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 )
 
-type Service struct {
+type service struct {
 	tx      contracts.TxManager
 	expRepo add.ExpenseRepository
 	catRepo add.CategoryRepository
 	logger  *slog.Logger
 }
 
-func NewService(tx contracts.TxManager, expRepo add.ExpenseRepository, catRepo add.CategoryRepository, logger *slog.Logger) *Service {
-	return &Service{
+func NewService(tx contracts.TxManager, expRepo add.ExpenseRepository, catRepo add.CategoryRepository, logger *slog.Logger) add.AddService {
+	return &service{
 		tx:      tx,
 		expRepo: expRepo,
 		catRepo: catRepo,
@@ -27,12 +27,8 @@ func NewService(tx contracts.TxManager, expRepo add.ExpenseRepository, catRepo a
 	}
 }
 
-func (s *Service) AddExpense(ctx context.Context, userID int64, req add.AddRequest) (int64, error) {
+func (s *service) AddExpense(ctx context.Context, userID int64, req add.AddRequest) (int64, error) {
 	const op = "service.add.AddExpense"
-
-	if req.Amount < 0 {
-		return 0, model.ErrInvalidAmount
-	}
 
 	if strings.TrimSpace(req.Category) == "" {
 		return 0, model.ErrInvalidCategory

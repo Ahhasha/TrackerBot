@@ -6,16 +6,17 @@ import (
 	"time"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
+	"github.com/Ahhasha/Tracker-bot/internal/contracts/add"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 )
 
-type Repo struct{}
+type postgresRepo struct{}
 
-func NewRepo() *Repo {
-	return &Repo{}
+func NewPostgresRepo() add.ExpenseRepository {
+	return &postgresRepo{}
 }
 
-func (r *Repo) Create(ctx context.Context, db contracts.DBTX, expense model.Expense) (int64, error) {
+func (r *postgresRepo) Create(ctx context.Context, db contracts.DBTX, expense model.Expense) (int64, error) {
 	const op = "repo.expense.Create"
 
 	const q = `
@@ -33,12 +34,12 @@ func (r *Repo) Create(ctx context.Context, db contracts.DBTX, expense model.Expe
 	return id, nil
 }
 
-func (r *Repo) GetToday(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error) {
+func (r *postgresRepo) GetToday(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error) {
 	const op = "repo.expense.GetToday"
 
 	now := time.Now()
 	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	end := start.Add(24*time.Hour - 1*time.Second)
+	end := start.AddDate(0, 0, 1)
 
 	expenses, err := r.getByPeriod(ctx, db, userID, start, end)
 	if err != nil {
@@ -48,18 +49,17 @@ func (r *Repo) GetToday(ctx context.Context, db contracts.DBTX, userID int64) ([
 	return expenses, nil
 }
 
-func (r *Repo) GetWeek(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error) {
+func (r *postgresRepo) GetWeek(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error) {
 	const op = "repo.expense.GetWeek"
 
 	now := time.Now()
 	weekday := now.Weekday()
 	if weekday == time.Sunday {
 		weekday = 7
-	} else {
-		weekday--
 	}
-	start := time.Date(now.Year(), now.Month(), now.Day()-int(weekday)+1, 0, 0, 0, 0, now.Location())
-	end := start.Add(7*24*time.Hour - 1*time.Second)
+	daysSinceMonday := int(weekday) - 1
+	start := time.Date(now.Year(), now.Month(), now.Day()-daysSinceMonday, 0, 0, 0, 0, now.Location())
+	end := start.AddDate(0, 0, 7)
 
 	expenses, err := r.getByPeriod(ctx, db, userID, start, end)
 	if err != nil {
@@ -69,12 +69,12 @@ func (r *Repo) GetWeek(ctx context.Context, db contracts.DBTX, userID int64) ([]
 	return expenses, nil
 }
 
-func (r *Repo) GetMonth(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error) {
+func (r *postgresRepo) GetMonth(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error) {
 	const op = "repo.expense.GetMonth"
 
 	now := time.Now()
 	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
-	end := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location()).Add(-1 * time.Second)
+	end := start.AddDate(0, 1, 0)
 
 	expenses, err := r.getByPeriod(ctx, db, userID, start, end)
 	if err != nil {
@@ -84,14 +84,15 @@ func (r *Repo) GetMonth(ctx context.Context, db contracts.DBTX, userID int64) ([
 	return expenses, nil
 }
 
-func (r *Repo) getByPeriod(ctx context.Context, db contracts.DBTX, userID int64, start, end time.Time) ([]model.Expense, error) {
+func (r *postgresRepo) getByPeriod(ctx context.Context, db contracts.DBTX, userID int64, start, end time.Time) ([]model.Expense, error) {
 	const op = "repo.expense.getByPeriod"
 
 	const q = `
 		SELECT id, user_id, amount, category_id, description, created_at
 		FROM expenses
 		WHERE user_id = $1
-		AND created_at BETWEEN $2 AND $3
+		AND created_at >= $2
+		AND created_at < $2
 		ORDER BY created_at DESC
 	`
 

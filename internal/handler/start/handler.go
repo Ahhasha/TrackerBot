@@ -10,16 +10,12 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 )
 
-type regService interface {
-	Register(ctx context.Context, tgID int64, username string) (startcont.RegisterResult, error)
-}
-
 type Handler struct {
 	lgr *slog.Logger
-	reg regService
+	reg startcont.RegistrationService
 }
 
-func New(lgr *slog.Logger, reg regService) *Handler {
+func New(lgr *slog.Logger, reg startcont.RegistrationService) *Handler {
 	return &Handler{
 		lgr: lgr,
 		reg: reg,

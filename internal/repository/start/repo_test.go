@@ -51,7 +51,7 @@ func (m *mockRow) Scan(dest ...any) error {
 
 func TestRepo_UpsertUser_NewUser(t *testing.T) {
 	ctx := context.Background()
-	repo := repoStart.NewRepo()
+	repo := repoStart.NewPostgresRepo()
 
 	db := &mockDBTX{
 		queryRowFunc: func(ctx context.Context, sql string, arguments ...any) pgx.Row {
@@ -82,7 +82,7 @@ func TestRepo_UpsertUser_NewUser(t *testing.T) {
 
 func TestRepo_UpsertUser_ExistingUser(t *testing.T) {
 	ctx := context.Background()
-	repo := repoStart.NewRepo()
+	repo := repoStart.NewPostgresRepo()
 
 	callCount := 0
 	db := &mockDBTX{
@@ -127,7 +127,7 @@ func TestRepo_UpsertUser_ExistingUser(t *testing.T) {
 
 func TestRepo_UpsertUser_DatabaseError(t *testing.T) {
 	ctx := context.Background()
-	repo := repoStart.NewRepo()
+	repo := repoStart.NewPostgresRepo()
 
 	db := &mockDBTX{
 		queryRowFunc: func(ctx context.Context, sql string, arguments ...any) pgx.Row {
@@ -154,7 +154,7 @@ func TestRepo_UpsertUser_DatabaseError(t *testing.T) {
 
 func TestRepo_UpsertUser_UpdateError(t *testing.T) {
 	ctx := context.Background()
-	repo := repoStart.NewRepo()
+	repo := repoStart.NewPostgresRepo()
 
 	callCount := 0
 	db := &mockDBTX{
@@ -187,7 +187,7 @@ func TestRepo_UpsertUser_UpdateError(t *testing.T) {
 
 func TestRepo_CreateDefaultCategories_Success(t *testing.T) {
 	ctx := context.Background()
-	repo := repoStart.NewRepo()
+	repo := repoStart.NewPostgresRepo()
 
 	execCalls := 0
 	categories := []string{"Еда", "Транспорт", "Прочее", "Развлечения"}
@@ -215,7 +215,7 @@ func TestRepo_CreateDefaultCategories_Success(t *testing.T) {
 
 func TestRepo_CreateDefaultCategories_AlreadyExist(t *testing.T) {
 	ctx := context.Background()
-	repo := repoStart.NewRepo()
+	repo := repoStart.NewPostgresRepo()
 
 	execCalls := 0
 	categories := []string{"Еда", "Транспорт", "Прочее", "Развлечения"}
@@ -244,7 +244,7 @@ func TestRepo_CreateDefaultCategories_AlreadyExist(t *testing.T) {
 
 func TestRepo_CreateDefaultCategories_DatabaseError(t *testing.T) {
 	ctx := context.Background()
-	repo := repoStart.NewRepo()
+	repo := repoStart.NewPostgresRepo()
 
 	execCalls := 0
 	db := &mockDBTX{

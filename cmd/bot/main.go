@@ -55,7 +55,7 @@ func main() {
 	defer pool.Close()
 
 	txManager := database.NewTxManager(pool)
-	repo := repoStart.NewRepo()
+	repo := repoStart.NewPostgresRepo()
 	regService := serv.NewService(txManager, repo, logger)
 	startHandler := start.New(logger, regService)
 

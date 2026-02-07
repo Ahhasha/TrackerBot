@@ -6,16 +6,17 @@ import (
 	"fmt"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
+	"github.com/Ahhasha/Tracker-bot/internal/contracts/start"
 	"github.com/jackc/pgx/v5"
 )
 
-type Repo struct{}
+type postgresRepo struct{}
 
-func NewRepo() *Repo {
-	return &Repo{}
+func NewPostgresRepo() start.RegistrationRepo {
+	return &postgresRepo{}
 }
 
-func (r *Repo) UpsertUser(ctx context.Context, db contracts.DBTX, tgID int64, username string) (int64, bool, error) {
+func (r *postgresRepo) UpsertUser(ctx context.Context, db contracts.DBTX, tgID int64, username string) (int64, bool, error) {
 	const op = "repo.start.UpsertUser"
 
 	const insertQ = `
@@ -49,7 +50,7 @@ func (r *Repo) UpsertUser(ctx context.Context, db contracts.DBTX, tgID int64, us
 	return id, false, nil
 }
 
-func (r *Repo) CreateDefaultCategories(ctx context.Context, db contracts.DBTX, userID int64) ([]string, error) {
+func (r *postgresRepo) CreateDefaultCategories(ctx context.Context, db contracts.DBTX, userID int64) ([]string, error) {
 	const op = "repo.start.CreateDefaultCategory"
 	defaults := []string{"Еда", "Транспорт", "Прочее", "Развлечения"}
 
