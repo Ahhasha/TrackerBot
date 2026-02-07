@@ -10,12 +10,12 @@ import (
 )
 
 type Service struct {
-	tx     startcont.TxManager
+	tx     contracts.TxManager
 	repo   startcont.RegistrationRepo
 	logger *slog.Logger
 }
 
-func NewService(tx startcont.TxManager, repo startcont.RegistrationRepo, logger *slog.Logger) *Service {
+func NewService(tx contracts.TxManager, repo startcont.RegistrationRepo, logger *slog.Logger) *Service {
 	return &Service{
 		tx:     tx,
 		repo:   repo,
