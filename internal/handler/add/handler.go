@@ -2,6 +2,7 @@ package add
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -26,25 +27,53 @@ func New(service add.AddService, logger *slog.Logger) *Handler {
 func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result, error) {
 	h.logger.Info("start command", slog.Int64("chat_id", cmd.ChatID), slog.Int64("user_id", cmd.UserID), slog.String("username", cmd.UserDisplayName))
 
-	const op = "handler.add.Handle"
 	req, err := h.parseAddArgs(cmd.RawArgs)
 	if err != nil {
 		h.logger.Warn("fail parse /add arguments", slog.String("error", err.Error()), slog.String("args", cmd.RawArgs))
 
 		return model.Result{
 			ChatID: cmd.ChatID,
-			Text:   h.formatUsage(),
+			Text: `❌ Неверный формат команды.
+				Используйте: /add <сумма> <категория> [описание]
+				Примеры:
+				/add 1500 еда обед в кафе
+				/add 500 транспорт такси до работы
+				/add 3000 развлечения кино`,
 		}, nil
 	}
 
 	expenseID, err := h.service.AddExpense(ctx, cmd.UserID, req)
 	if err != nil {
-		h.logger.Error("fail add expense", slog.String("op", op), slog.Int64("tguser_id", cmd.UserID), slog.Any("error", err))
+		switch {
+		case errors.Is(err, model.ErrUserNotRegistered):
+			return model.Result{
+				ChatID: cmd.ChatID,
+				Text:   "❌ Вы не зарегистрированы. Используйте /start",
+			}, nil
 
-		errorText := h.error(err, req.Category)
+		case errors.Is(err, model.ErrCategoryNotFound):
+			return model.Result{
+				ChatID: cmd.ChatID,
+				Text:   "❌ Категория не найдена. Используйте /categories",
+			}, nil
+
+		case errors.Is(err, model.ErrInvalidAmount):
+			return model.Result{
+				ChatID: cmd.ChatID,
+				Text:   "❌ Ошибка: сумма должна быть положительным числом",
+			}, nil
+
+		case errors.Is(err, model.ErrInvalidCategory):
+			return model.Result{
+				ChatID: cmd.ChatID,
+				Text:   "❌ Категория не указана. Пример: /add 500 Еда Обед",
+			}, nil
+		}
+		h.logger.Error("fail add expense", "err", err, "user_id", cmd.UserID, "chat_id", cmd.ChatID)
+
 		return model.Result{
 			ChatID: cmd.ChatID,
-			Text:   errorText,
+			Text:   "❌ Произошла ошибка. Попробуйте позже.",
 		}, nil
 	}
 
@@ -58,7 +87,7 @@ func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result,
 		successText += fmt.Sprintf("\n📄 Описание: %s", req.Description)
 	}
 
-	h.logger.Info("expense added successfully", slog.Int64("expense_id", expenseID), slog.Int64("tguser_id", cmd.UserID), slog.Int64("amount", req.Amount))
+	h.logger.Info("expense added successfully", "expense_id", expenseID, "tguser_id", cmd.UserID, "amount", req.Amount)
 
 	return model.Result{
 		ChatID: cmd.ChatID,
@@ -94,35 +123,4 @@ func (h *Handler) parseAddArgs(rawArgs string) (add.AddRequest, error) {
 		Category:    category,
 		Description: description,
 	}, nil
-}
-
-func (h *Handler) formatUsage() string {
-	return `❌ Неверный формат команды.
-
-Используйте: /add <сумма> <категория> [описание]
-
-Примеры:
-/add 1500 еда обед в кафе
-/add 500 транспорт такси до работы
-/add 3000 развлечения кино`
-
-}
-
-func (h *Handler) error(err error, category string) string {
-	errorMsg := err.Error()
-
-	if strings.Contains(errorMsg, "category not found") || strings.Contains(errorMsg, "категория не найдена") {
-		return fmt.Sprintf("❌ Категория '%s' не найдена.\n\n"+
-			"Используйте /categories чтобы увидеть доступные категории.", category)
-	}
-
-	if strings.Contains(errorMsg, "сумма должна быть положительной") {
-		return "❌ Сумма должна быть положительным числом."
-	}
-
-	if strings.Contains(errorMsg, "категория обязательна") {
-		return "❌ Категория обязательна. Укажите категорию расхода."
-	}
-
-	return "❌ Не удалось добавить расход. Попробуйте позже."
 }
