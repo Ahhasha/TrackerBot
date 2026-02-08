@@ -17,3 +17,7 @@ type ExpenseRepository interface {
 type CategoryRepository interface {
 	GetByName(ctx context.Context, db contracts.DBTX, userID int64, name string) (model.Category, error)
 }
+
+type UserRepository interface {
+	GetIDByTgID(ctx context.Context, db contracts.DBTX, tgUserID int64) (int64, error)
+}

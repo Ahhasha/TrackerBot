@@ -18,6 +18,7 @@ import (
 	categoryRepo "github.com/Ahhasha/Tracker-bot/internal/repository/category"
 	expenseRepo "github.com/Ahhasha/Tracker-bot/internal/repository/expense"
 	repoStart "github.com/Ahhasha/Tracker-bot/internal/repository/start"
+	userRepo "github.com/Ahhasha/Tracker-bot/internal/repository/user"
 	"github.com/Ahhasha/Tracker-bot/internal/router"
 	addService "github.com/Ahhasha/Tracker-bot/internal/service/add"
 	serv "github.com/Ahhasha/Tracker-bot/internal/service/start"
@@ -63,9 +64,10 @@ func main() {
 	regService := serv.NewService(txManager, repo, logger)
 	startHandler := start.New(logger, regService)
 
+	userRepository := userRepo.NewPostgresRepo()
 	expenseRepository := expenseRepo.NewPostgresRepo()
 	categoryRepository := categoryRepo.NewPostgresRepo()
-	addService := addService.NewService(txManager, expenseRepository, categoryRepository, logger)
+	addService := addService.NewService(txManager, expenseRepository, categoryRepository, logger, userRepository)
 	addHandler := addHandler.New(addService, logger)
 
 	r := router.New(map[model.CommandName]router.Handler{

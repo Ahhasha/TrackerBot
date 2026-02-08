@@ -15,7 +15,7 @@ type Expense struct {
 }
 
 func (e *Expense) Validate() error {
-	if e.Amount < 0 {
+	if e.Amount <= 0 {
 		return ErrInvalidAmount
 	}
 
