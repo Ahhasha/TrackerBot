@@ -1,15 +1,8 @@
 package model
 
 import (
-	"errors"
 	"fmt"
 	"time"
-)
-
-var (
-	ErrInvalidAmount   = errors.New("сумма должна быть положительной")
-	ErrInvalidCategory = errors.New("категория обязательна")
-	ErrInvalidUser     = errors.New("пользователь обязателен")
 )
 
 type Expense struct {
