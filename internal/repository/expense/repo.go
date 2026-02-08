@@ -92,7 +92,7 @@ func (r *postgresRepo) getByPeriod(ctx context.Context, db contracts.DBTX, userI
 		FROM expenses
 		WHERE user_id = $1
 		AND created_at >= $2
-		AND created_at < $2
+		AND created_at < $3
 		ORDER BY created_at DESC
 	`
 

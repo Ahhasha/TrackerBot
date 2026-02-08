@@ -12,10 +12,14 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/app"
 	"github.com/Ahhasha/Tracker-bot/internal/config"
 	"github.com/Ahhasha/Tracker-bot/internal/database"
+	addHandler "github.com/Ahhasha/Tracker-bot/internal/handler/add"
 	"github.com/Ahhasha/Tracker-bot/internal/handler/start"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
+	categoryRepo "github.com/Ahhasha/Tracker-bot/internal/repository/category"
+	expenseRepo "github.com/Ahhasha/Tracker-bot/internal/repository/expense"
 	repoStart "github.com/Ahhasha/Tracker-bot/internal/repository/start"
 	"github.com/Ahhasha/Tracker-bot/internal/router"
+	addService "github.com/Ahhasha/Tracker-bot/internal/service/add"
 	serv "github.com/Ahhasha/Tracker-bot/internal/service/start"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -59,8 +63,14 @@ func main() {
 	regService := serv.NewService(txManager, repo, logger)
 	startHandler := start.New(logger, regService)
 
+	expenseRepository := expenseRepo.NewPostgresRepo()
+	categoryRepository := categoryRepo.NewPostgresRepo()
+	addService := addService.NewService(txManager, expenseRepository, categoryRepository, logger)
+	addHandler := addHandler.New(addService, logger)
+
 	r := router.New(map[model.CommandName]router.Handler{
 		model.CommandStart: startHandler,
+		model.CommandAdd:   addHandler,
 	}, logger)
 
 	app := app.NewBot(bot, r, logger)

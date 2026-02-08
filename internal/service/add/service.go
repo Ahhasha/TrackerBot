@@ -27,7 +27,7 @@ func NewService(tx contracts.TxManager, expRepo add.ExpenseRepository, catRepo a
 	}
 }
 
-func (s *service) AddExpense(ctx context.Context, userID int64, req add.AddRequest) (int64, error) {
+func (s *service) AddExpense(ctx context.Context, tgUserID int64, req add.AddRequest) (int64, error) {
 	const op = "service.add.AddExpense"
 
 	if strings.TrimSpace(req.Category) == "" {
@@ -37,13 +37,20 @@ func (s *service) AddExpense(ctx context.Context, userID int64, req add.AddReque
 	var expenseID int64
 
 	err := s.tx.Do(ctx, func(db contracts.DBTX) error {
-		category, err := s.catRepo.GetByName(ctx, db, userID, req.Category)
+		const getUserid = `SELECT id FROM users WHERE tg_id = $1`
+		var internalUserID int64
+		err := db.QueryRow(ctx, getUserid, tgUserID).Scan(&internalUserID)
+		if err != nil {
+			return fmt.Errorf("user with tg_id %d not found. Use /start", tgUserID)
+		}
+
+		category, err := s.catRepo.GetByName(ctx, db, internalUserID, req.Category)
 		if err != nil {
 			return fmt.Errorf("%s: get category: %w", op, err)
 		}
 
 		expense := model.Expense{
-			UserID:      userID,
+			UserID:      internalUserID,
 			Amount:      req.Amount,
 			CategoryID:  category.ID,
 			Description: req.Description,
@@ -62,9 +69,10 @@ func (s *service) AddExpense(ctx context.Context, userID int64, req add.AddReque
 	})
 
 	if err != nil {
-		s.logger.Error("fail to add expense", "op", op, "user_id", userID, "error", err)
+		s.logger.Error("fail to add expense", "op", op, "tguser_id", tgUserID, "error", err)
+		return 0, err
 	}
-	s.logger.Info("expense add", "expense_id", expenseID, "user_id", userID, "amount", req.Amount)
+	s.logger.Info("expense add", "expense_id", expenseID, "tguser_id", tgUserID, "amount", req.Amount)
 
 	return expenseID, nil
 }
