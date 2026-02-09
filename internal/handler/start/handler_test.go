@@ -122,10 +122,8 @@ func TestStartHandler_Handle_ServiceError(t *testing.T) {
 
 	result, err := handler.Handle(ctx, cmd)
 
-	require.NoError(t, err, "Хендлер должен обработать ошибку сервиса, а не прокидывать её")
-
-	assert.Equal(t, int64(999), result.ChatID)
-	assert.Contains(t, result.Text, "Произошла ошибка", "Должно быть сообщение об ошибке")
+	assert.ErrorIs(t, err, assert.AnError)
+	_ = result
 }
 
 func TestStartHandler_UserWithoutUsername(t *testing.T) {

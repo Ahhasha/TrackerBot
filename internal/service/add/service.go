@@ -46,7 +46,7 @@ func (s *service) AddExpense(ctx context.Context, tgUserID int64, req add.AddReq
 			if errors.Is(err, pgx.ErrNoRows) {
 				return model.ErrUserNotRegistered
 			}
-			return fmt.Errorf("%s: get user: %w", op, err)
+			return fmt.Errorf("%s: get internal user id: %w", op, err)
 		}
 
 		category, err := s.catRepo.GetByName(ctx, db, internalUserID, req.Category)
@@ -65,7 +65,7 @@ func (s *service) AddExpense(ctx context.Context, tgUserID int64, req add.AddReq
 		}
 
 		if err := expense.Validate(); err != nil {
-			return fmt.Errorf("%s: validate expense: %w", op, err)
+			return err
 		}
 
 		expenseID, err = s.expRepo.Create(ctx, db, expense)
@@ -77,10 +77,7 @@ func (s *service) AddExpense(ctx context.Context, tgUserID int64, req add.AddReq
 	})
 
 	if err != nil {
-		s.logger.Error("fail to add expense", "op", op, "tguser_id", tgUserID, "error", err)
 		return 0, err
 	}
-	s.logger.Info("expense add", "expense_id", expenseID, "tguser_id", tgUserID, "amount", req.Amount)
-
 	return expenseID, nil
 }

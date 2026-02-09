@@ -20,16 +20,18 @@ func New(handlers map[model.CommandName]Handler, lgr *slog.Logger) *Router {
 }
 
 func (r *Router) Route(ctx context.Context, cmd *model.Command) model.Result {
+	const op = "router.Route"
 	if cmd == nil {
+		r.lgr.Warn("nil command", slog.String("op", op))
 		return model.Result{
 			ChatID: 0,
 			Text:   "Unknown command",
 		}
 	}
-
+	log := r.lgr.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
 	h, ok := r.handlers[cmd.Name]
 	if !ok {
-		r.lgr.Info("unknown command", slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("user_id", cmd.UserID))
+		log.Info("unknown command")
 		return model.Result{
 			ChatID: cmd.ChatID,
 			Text:   "Неизвестная команда, используйте /help",
@@ -38,7 +40,7 @@ func (r *Router) Route(ctx context.Context, cmd *model.Command) model.Result {
 
 	res, err := h.Handle(ctx, cmd)
 	if err != nil {
-		r.lgr.Error("Handler error", slog.Any("err", err), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("user_id", cmd.UserID))
+		log.Error("handler failed", slog.Any("err", err))
 		return model.Result{
 			ChatID: cmd.ChatID,
 			Text:   "Произошла ошибка, попробуйте позже.",

@@ -23,16 +23,13 @@ func New(lgr *slog.Logger, reg startcont.RegistrationService) *Handler {
 }
 
 func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result, error) {
-	h.lgr.Info("start command", slog.Int64("chat_id", cmd.ChatID), slog.Int64("user_id", cmd.UserID), slog.String("username", cmd.UserDisplayName))
+	const op = "handler.start.Handle"
+	log := h.lgr.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
+	log.Info("start command")
 
 	res, err := h.reg.Register(ctx, cmd.UserID, cmd.UserDisplayName)
 	if err != nil {
-		h.lgr.Error("register user failed", slog.Any("err", err), slog.Int64("chat_id", cmd.ChatID), slog.Int64("user_id", cmd.UserID))
-
-		return model.Result{
-			ChatID: cmd.ChatID,
-			Text:   "Произошла ошибка во время регистрации, пожалуйста, попробуйте чуть позже.",
-		}, nil
+		return model.Result{}, err
 	}
 
 	if res.Created {

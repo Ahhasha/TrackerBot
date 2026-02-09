@@ -25,11 +25,13 @@ func New(service add.AddService, logger *slog.Logger) *Handler {
 }
 
 func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result, error) {
-	h.logger.Info("start command", slog.Int64("chat_id", cmd.ChatID), slog.Int64("user_id", cmd.UserID), slog.String("username", cmd.UserDisplayName))
+	const op = "handler.add.Handle"
+	log := h.logger.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
+	log.Info("handle /add")
 
 	req, err := h.parseAddArgs(cmd.RawArgs)
 	if err != nil {
-		h.logger.Warn("fail parse /add arguments", slog.String("error", err.Error()), slog.String("args", cmd.RawArgs))
+		log.Warn("fail parse /add arguments", slog.Any("err", err), slog.String("args", cmd.RawArgs))
 
 		return model.Result{
 			ChatID: cmd.ChatID,
@@ -69,12 +71,7 @@ func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result,
 				Text:   "❌ Категория не указана. Пример: /add 500 Еда Обед",
 			}, nil
 		}
-		h.logger.Error("fail add expense", "err", err, "user_id", cmd.UserID, "chat_id", cmd.ChatID)
-
-		return model.Result{
-			ChatID: cmd.ChatID,
-			Text:   "❌ Произошла ошибка. Попробуйте позже.",
-		}, nil
+		return model.Result{}, err
 	}
 
 	successText := fmt.Sprintf("✅ Расход добавлен!\n\n"+
@@ -87,7 +84,7 @@ func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result,
 		successText += fmt.Sprintf("\n📄 Описание: %s", req.Description)
 	}
 
-	h.logger.Info("expense added successfully", "expense_id", expenseID, "tguser_id", cmd.UserID, "amount", req.Amount)
+	log.Info("expense added successfully", slog.Int64("expense_id", expenseID), slog.Int64("amount", req.Amount))
 
 	return model.Result{
 		ChatID: cmd.ChatID,
@@ -105,10 +102,6 @@ func (h *Handler) parseAddArgs(rawArgs string) (add.AddRequest, error) {
 	amount, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil {
 		return add.AddRequest{}, fmt.Errorf("неверный формат суммы: %v", err)
-	}
-
-	if amount <= 0 {
-		return add.AddRequest{}, fmt.Errorf("сумма должна быть положительной")
 	}
 
 	category := parts[1]

@@ -33,7 +33,7 @@ func (r *postgresRepo) UpsertUser(ctx context.Context, db contracts.DBTX, tgID i
 	}
 
 	if !errors.Is(err, pgx.ErrNoRows) {
-		return 0, false, fmt.Errorf("%s: insert returning id: %w", op, err)
+		return 0, false, fmt.Errorf("%s: insert scan: %w", op, err)
 	}
 
 	const updateQ = `
@@ -43,8 +43,9 @@ func (r *postgresRepo) UpsertUser(ctx context.Context, db contracts.DBTX, tgID i
 		RETURNING id;
 	`
 
-	if err := db.QueryRow(ctx, updateQ, tgID, username).Scan(&id); err != nil {
-		return 0, false, fmt.Errorf("%s: update returning id: %w", op, err)
+	err = db.QueryRow(ctx, updateQ, tgID, username).Scan(&id)
+	if err != nil {
+		return 0, false, fmt.Errorf("%s: update scan: %w", op, err)
 	}
 
 	return id, false, nil

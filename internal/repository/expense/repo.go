@@ -28,7 +28,7 @@ func (r *postgresRepo) Create(ctx context.Context, db contracts.DBTX, expense mo
 	var id int64
 	err := db.QueryRow(ctx, q, expense.UserID, expense.Amount, expense.CategoryID, expense.Description).Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return 0, fmt.Errorf("%s: scan: %w", op, err)
 	}
 
 	return id, nil
