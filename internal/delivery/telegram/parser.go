@@ -28,6 +28,12 @@ func ParseUpdateToCommand(update tgbotapi.Update) *model.Command {
 		name = model.CommandHelp
 	case "add":
 		name = model.CommandAdd
+	case "today":
+		name = model.CommandToday
+	case "week":
+		name = model.CommandWeek
+	case "month":
+		name = model.CommandMonth
 	default:
 		name = model.CommandUnknown
 	}

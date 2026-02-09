@@ -12,19 +12,19 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 )
 
-type Handler struct {
+type AddHandler struct {
 	service expense.Service
 	logger  *slog.Logger
 }
 
-func New(service expense.Service, logger *slog.Logger) *Handler {
-	return &Handler{
+func NewAdd(service expense.Service, logger *slog.Logger) *AddHandler {
+	return &AddHandler{
 		service: service,
 		logger:  logger,
 	}
 }
 
-func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result, error) {
+func (h *AddHandler) Handle(ctx context.Context, cmd *model.Command) (model.Result, error) {
 	const op = "handler.add.Handle"
 	log := h.logger.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
 	log.Info("handle /add")
@@ -92,7 +92,7 @@ func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result,
 	}, nil
 }
 
-func (h *Handler) parseAddArgs(rawArgs string) (expense.ExpenseRequest, error) {
+func (h *AddHandler) parseAddArgs(rawArgs string) (expense.ExpenseRequest, error) {
 	parts := strings.Fields(rawArgs)
 
 	if len(parts) < 2 {

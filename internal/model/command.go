@@ -7,6 +7,9 @@ const (
 	CommandStart   CommandName = "start"
 	CommandHelp    CommandName = "help"
 	CommandAdd     CommandName = "add"
+	CommandToday   CommandName = "today"
+	CommandWeek    CommandName = "week"
+	CommandMonth   CommandName = "month"
 )
 
 type Command struct {

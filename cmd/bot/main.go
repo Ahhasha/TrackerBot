@@ -60,19 +60,27 @@ func main() {
 	defer pool.Close()
 
 	txManager := database.NewTxManager(pool)
-	repo := repoStart.NewPostgresRepo()
-	regService := serv.NewService(txManager, repo, logger)
-	startHandler := start.New(logger, regService)
 
+	startRepository := repoStart.NewPostgresRepo()
 	userRepository := userRepo.NewPostgresRepo()
 	expenseRepository := expenseRepo.NewPostgresRepo()
 	categoryRepository := categoryRepo.NewPostgresRepo()
+
+	regService := serv.NewService(txManager, startRepository, logger)
 	expenseService := expenseService.NewService(txManager, expenseRepository, categoryRepository, userRepository, time.Now)
-	expenseHandler := expenseHandler.New(expenseService, logger)
+
+	startHandler := start.New(logger, regService)
+	addHandler := expenseHandler.NewAdd(expenseService, logger)
+	todayHandler := expenseHandler.NewToday(expenseService, logger)
+	weekHandler := expenseHandler.NewWeek(expenseService, logger)
+	monthHandler := expenseHandler.NewMonth(expenseService, logger)
 
 	r := router.New(map[model.CommandName]router.Handler{
 		model.CommandStart: startHandler,
-		model.CommandAdd:   expenseHandler,
+		model.CommandAdd:   addHandler,
+		model.CommandToday: todayHandler,
+		model.CommandWeek:  weekHandler,
+		model.CommandMonth: monthHandler,
 	}, logger)
 
 	app := app.NewBot(bot, r, logger)
