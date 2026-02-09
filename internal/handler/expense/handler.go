@@ -13,11 +13,11 @@ import (
 )
 
 type Handler struct {
-	service expense.ExpenseService
+	service expense.Service
 	logger  *slog.Logger
 }
 
-func New(service expense.ExpenseService, logger *slog.Logger) *Handler {
+func New(service expense.Service, logger *slog.Logger) *Handler {
 	return &Handler{
 		service: service,
 		logger:  logger,

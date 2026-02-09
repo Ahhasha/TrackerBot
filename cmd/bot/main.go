@@ -67,7 +67,7 @@ func main() {
 	userRepository := userRepo.NewPostgresRepo()
 	expenseRepository := expenseRepo.NewPostgresRepo()
 	categoryRepository := categoryRepo.NewPostgresRepo()
-	expenseService := expenseService.NewService(txManager, expenseRepository, categoryRepository, userRepository)
+	expenseService := expenseService.NewService(txManager, expenseRepository, categoryRepository, userRepository, time.Now)
 	expenseHandler := expenseHandler.New(expenseService, logger)
 
 	r := router.New(map[model.CommandName]router.Handler{
