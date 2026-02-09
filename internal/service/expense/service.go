@@ -1,37 +1,34 @@
-package add
+package expense
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
-	"github.com/Ahhasha/Tracker-bot/internal/contracts/add"
+	"github.com/Ahhasha/Tracker-bot/internal/contracts/expense"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 	"github.com/jackc/pgx/v5"
 )
 
 type service struct {
 	tx       contracts.TxManager
-	expRepo  add.ExpenseRepository
-	catRepo  add.CategoryRepository
-	logger   *slog.Logger
-	userRepo add.UserRepository
+	expRepo  expense.ExpenseRepository
+	catRepo  expense.CategoryRepository
+	userRepo expense.UserRepository
 }
 
-func NewService(tx contracts.TxManager, expRepo add.ExpenseRepository, catRepo add.CategoryRepository, logger *slog.Logger, userRepo add.UserRepository) add.AddService {
+func NewService(tx contracts.TxManager, expRepo expense.ExpenseRepository, catRepo expense.CategoryRepository, userRepo expense.UserRepository) expense.ExpenseService {
 	return &service{
 		tx:       tx,
 		expRepo:  expRepo,
 		catRepo:  catRepo,
-		logger:   logger,
 		userRepo: userRepo,
 	}
 }
 
-func (s *service) AddExpense(ctx context.Context, tgUserID int64, req add.AddRequest) (int64, error) {
+func (s *service) AddExpense(ctx context.Context, tgUserID int64, req expense.ExpenseRequest) (int64, error) {
 	const op = "service.add.AddExpense"
 
 	if strings.TrimSpace(req.Category) == "" {
@@ -81,3 +78,5 @@ func (s *service) AddExpense(ctx context.Context, tgUserID int64, req add.AddReq
 	}
 	return expenseID, nil
 }
+
+func (s *service) GetTodayWithCategory(ctx context.Context)

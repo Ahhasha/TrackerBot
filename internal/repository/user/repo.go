@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
-	"github.com/Ahhasha/Tracker-bot/internal/contracts/add"
+	expense "github.com/Ahhasha/Tracker-bot/internal/contracts/expense"
 )
 
 type postgresRepo struct{}
 
-func NewPostgresRepo() add.UserRepository {
+func NewPostgresRepo() expense.UserRepository {
 	return &postgresRepo{}
 }
 

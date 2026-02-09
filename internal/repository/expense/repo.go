@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
-	"github.com/Ahhasha/Tracker-bot/internal/contracts/add"
+	expense "github.com/Ahhasha/Tracker-bot/internal/contracts/expense"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 )
 
 type postgresRepo struct{}
 
-func NewPostgresRepo() add.ExpenseRepository {
+func NewPostgresRepo() expense.ExpenseRepository {
 	return &postgresRepo{}
 }
 

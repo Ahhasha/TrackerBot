@@ -12,7 +12,7 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/app"
 	"github.com/Ahhasha/Tracker-bot/internal/config"
 	"github.com/Ahhasha/Tracker-bot/internal/database"
-	addHandler "github.com/Ahhasha/Tracker-bot/internal/handler/add"
+	expenseHandler "github.com/Ahhasha/Tracker-bot/internal/handler/expense"
 	"github.com/Ahhasha/Tracker-bot/internal/handler/start"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 	categoryRepo "github.com/Ahhasha/Tracker-bot/internal/repository/category"
@@ -20,7 +20,7 @@ import (
 	repoStart "github.com/Ahhasha/Tracker-bot/internal/repository/start"
 	userRepo "github.com/Ahhasha/Tracker-bot/internal/repository/user"
 	"github.com/Ahhasha/Tracker-bot/internal/router"
-	addService "github.com/Ahhasha/Tracker-bot/internal/service/add"
+	expenseService "github.com/Ahhasha/Tracker-bot/internal/service/expense"
 	serv "github.com/Ahhasha/Tracker-bot/internal/service/start"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -67,12 +67,12 @@ func main() {
 	userRepository := userRepo.NewPostgresRepo()
 	expenseRepository := expenseRepo.NewPostgresRepo()
 	categoryRepository := categoryRepo.NewPostgresRepo()
-	addService := addService.NewService(txManager, expenseRepository, categoryRepository, logger, userRepository)
-	addHandler := addHandler.New(addService, logger)
+	expenseService := expenseService.NewService(txManager, expenseRepository, categoryRepository, userRepository)
+	expenseHandler := expenseHandler.New(expenseService, logger)
 
 	r := router.New(map[model.CommandName]router.Handler{
 		model.CommandStart: startHandler,
-		model.CommandAdd:   addHandler,
+		model.CommandAdd:   expenseHandler,
 	}, logger)
 
 	app := app.NewBot(bot, r, logger)

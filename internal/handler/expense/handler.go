@@ -1,4 +1,4 @@
-package add
+package expense
 
 import (
 	"context"
@@ -8,16 +8,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Ahhasha/Tracker-bot/internal/contracts/add"
+	"github.com/Ahhasha/Tracker-bot/internal/contracts/expense"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 )
 
 type Handler struct {
-	service add.AddService
+	service expense.ExpenseService
 	logger  *slog.Logger
 }
 
-func New(service add.AddService, logger *slog.Logger) *Handler {
+func New(service expense.ExpenseService, logger *slog.Logger) *Handler {
 	return &Handler{
 		service: service,
 		logger:  logger,
@@ -92,16 +92,16 @@ func (h *Handler) Handle(ctx context.Context, cmd *model.Command) (model.Result,
 	}, nil
 }
 
-func (h *Handler) parseAddArgs(rawArgs string) (add.AddRequest, error) {
+func (h *Handler) parseAddArgs(rawArgs string) (expense.ExpenseRequest, error) {
 	parts := strings.Fields(rawArgs)
 
 	if len(parts) < 2 {
-		return add.AddRequest{}, fmt.Errorf("недостаточно аргументов")
+		return expense.ExpenseRequest{}, fmt.Errorf("недостаточно аргументов")
 	}
 
 	amount, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil {
-		return add.AddRequest{}, fmt.Errorf("неверный формат суммы: %v", err)
+		return expense.ExpenseRequest{}, fmt.Errorf("неверный формат суммы: %v", err)
 	}
 
 	category := parts[1]
@@ -111,7 +111,7 @@ func (h *Handler) parseAddArgs(rawArgs string) (add.AddRequest, error) {
 		description = strings.Join(parts[2:], " ")
 	}
 
-	return add.AddRequest{
+	return expense.ExpenseRequest{
 		Amount:      amount,
 		Category:    category,
 		Description: description,
