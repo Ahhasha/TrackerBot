@@ -35,70 +35,48 @@ func (r *postgresRepo) Create(ctx context.Context, db contracts.DBTX, expense mo
 }
 
 func (r *postgresRepo) GetToday(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error) {
-	const op = "repo.expense.GetToday"
-
-	now := time.Now()
-	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	end := start.AddDate(0, 0, 1)
-
-	expenses, err := r.getByPeriod(ctx, db, userID, start, end)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	return expenses, nil
+	start, end := todayRange(time.Now())
+	return r.getByPeriod(ctx, db, userID, start, end)
 }
 
 func (r *postgresRepo) GetWeek(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error) {
-	const op = "repo.expense.GetWeek"
-
-	now := time.Now()
-	weekday := now.Weekday()
-	if weekday == time.Sunday {
-		weekday = 7
-	}
-	daysSinceMonday := int(weekday) - 1
-	start := time.Date(now.Year(), now.Month(), now.Day()-daysSinceMonday, 0, 0, 0, 0, now.Location())
-	end := start.AddDate(0, 0, 7)
-
-	expenses, err := r.getByPeriod(ctx, db, userID, start, end)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	return expenses, nil
+	start, end := weekRange(time.Now())
+	return r.getByPeriod(ctx, db, userID, start, end)
 }
 
 func (r *postgresRepo) GetMonth(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error) {
-	const op = "repo.expense.GetMonth"
+	start, end := monthRange(time.Now())
+	return r.getByPeriod(ctx, db, userID, start, end)
+}
 
-	now := time.Now()
-	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
-	end := start.AddDate(0, 1, 0)
+func (r *postgresRepo) GetDayWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error) {
+	start, end := todayRange(time.Now())
+	return r.getByPeriodWithCategory(ctx, db, userID, start, end)
+}
 
-	expenses, err := r.getByPeriod(ctx, db, userID, start, end)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
+func (r *postgresRepo) GetWeekWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error) {
+	start, end := weekRange(time.Now())
+	return r.getByPeriodWithCategory(ctx, db, userID, start, end)
+}
 
-	return expenses, nil
+func (r *postgresRepo) GetMonthWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error) {
+	start, end := monthRange(time.Now())
+	return r.getByPeriodWithCategory(ctx, db, userID, start, end)
 }
 
 func (r *postgresRepo) getByPeriod(ctx context.Context, db contracts.DBTX, userID int64, start, end time.Time) ([]model.Expense, error) {
-	const op = "repo.expense.getByPeriod"
-
 	const q = `
 		SELECT id, user_id, amount, category_id, description, created_at
 		FROM expenses
 		WHERE user_id = $1
 		AND created_at >= $2
-		AND created_at < $3
+		AND created_at <  $3
 		ORDER BY created_at DESC
 	`
 
 	rows, err := db.Query(ctx, q, userID, start, end)
 	if err != nil {
-		return nil, fmt.Errorf("%s: query: %w", op, err)
+		return nil, fmt.Errorf("repo.expense.getByPeriod: query: %w", err)
 	}
 	defer rows.Close()
 
@@ -106,14 +84,67 @@ func (r *postgresRepo) getByPeriod(ctx context.Context, db contracts.DBTX, userI
 	for rows.Next() {
 		var e model.Expense
 		if err := rows.Scan(&e.ID, &e.UserID, &e.Amount, &e.CategoryID, &e.Description, &e.CreatedAt); err != nil {
-			return nil, fmt.Errorf("%s: scan: %w", op, err)
+			return nil, fmt.Errorf("repo.expense.getByPeriod: scan: %w", err)
 		}
 		expenses = append(expenses, e)
 	}
-
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("%s: rows error: %w", op, err)
+		return nil, fmt.Errorf("repo.expense.getByPeriod: rows: %w", err)
 	}
 
 	return expenses, nil
+}
+
+func (r *postgresRepo) getByPeriodWithCategory(ctx context.Context, db contracts.DBTX, userID int64, start, end time.Time) ([]model.ExpenseWithCategory, error) {
+	const q = `
+		SELECT e.amount, e.description, c.name, e.created_at
+		FROM expenses e JOIN categories c ON c.id = e.category_id
+		WHERE e.user_id = $1
+		AND e.created_at >= $2
+		AND e.created_at <  $3
+		ORDER BY e.created_at DESC
+	`
+
+	rows, err := db.Query(ctx, q, userID, start, end)
+	if err != nil {
+		return nil, fmt.Errorf("repo.expense.getByPeriodWithCategory: query: %w", err)
+	}
+	defer rows.Close()
+
+	var result []model.ExpenseWithCategory
+	for rows.Next() {
+		var row model.ExpenseWithCategory
+		if err := rows.Scan(&row.Amount, &row.Description, &row.Category, &row.CreatedAt); err != nil {
+			return nil, fmt.Errorf("repo.expense.getByPeriodWithCategory: scan: %w", err)
+		}
+		result = append(result, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("repo.expense.getByPeriodWithCategory: rows: %w", err)
+	}
+
+	return result, nil
+}
+
+func todayRange(now time.Time) (time.Time, time.Time) {
+	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	end := start.AddDate(0, 0, 1)
+	return start, end
+}
+
+func weekRange(now time.Time) (time.Time, time.Time) {
+	weekday := now.Weekday()
+	if weekday == time.Sunday {
+		weekday = 7
+	}
+	daysSinceMonday := int(weekday) - 1
+	start := time.Date(now.Year(), now.Month(), now.Day()-daysSinceMonday, 0, 0, 0, 0, now.Location())
+	end := start.AddDate(0, 0, 7)
+	return start, end
+}
+
+func monthRange(now time.Time) (time.Time, time.Time) {
+	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	end := start.AddDate(0, 1, 0)
+	return start, end
 }

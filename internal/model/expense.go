@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -28,8 +27,4 @@ func (e *Expense) Validate() error {
 	}
 
 	return nil
-}
-
-func (e *Expense) Format() string {
-	return fmt.Sprintf("%d₽", e.Amount)
 }
