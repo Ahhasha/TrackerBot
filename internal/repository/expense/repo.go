@@ -49,7 +49,7 @@ func (r *postgresRepo) GetMonth(ctx context.Context, db contracts.DBTX, userID i
 	return r.getByPeriod(ctx, db, userID, start, end)
 }
 
-func (r *postgresRepo) GetDayWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error) {
+func (r *postgresRepo) GetTodayWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error) {
 	start, end := todayRange(time.Now())
 	return r.getByPeriodWithCategory(ctx, db, userID, start, end)
 }

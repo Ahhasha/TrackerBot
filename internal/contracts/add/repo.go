@@ -9,9 +9,14 @@ import (
 
 type ExpenseRepository interface {
 	Create(ctx context.Context, db contracts.DBTX, expense model.Expense) (int64, error)
+
 	GetToday(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error)
 	GetWeek(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error)
 	GetMonth(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error)
+
+	GetTodayWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error)
+	GetWeekWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error)
+	GetMonthWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error)
 }
 
 type CategoryRepository interface {
