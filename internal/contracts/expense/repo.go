@@ -2,6 +2,7 @@ package expense
 
 import (
 	"context"
+	"time"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
@@ -10,13 +11,7 @@ import (
 type ExpenseRepository interface {
 	Create(ctx context.Context, db contracts.DBTX, expense model.Expense) (int64, error)
 
-	GetToday(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error)
-	GetWeek(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error)
-	GetMonth(ctx context.Context, db contracts.DBTX, userID int64) ([]model.Expense, error)
-
-	GetTodayWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error)
-	GetWeekWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error)
-	GetMonthWithCategory(ctx context.Context, db contracts.DBTX, userID int64) ([]model.ExpenseWithCategory, error)
+	GetPeriodWithCategory(ctx context.Context, db contracts.DBTX, userID int64, start time.Time, end time.Time) ([]model.ExpenseWithCategory, error)
 }
 
 type CategoryRepository interface {

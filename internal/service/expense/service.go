@@ -92,20 +92,23 @@ func (s *service) AddExpense(ctx context.Context, tgUserID int64, req expense.Ex
 }
 
 func (s *service) Today(ctx context.Context, tgUserID int64) (model.PeriodReport, error) {
-	return s.period(ctx, tgUserID, periodToday)
+	return s.buildReport(ctx, tgUserID, periodToday)
 }
 
 func (s *service) Week(ctx context.Context, tgUserID int64) (model.PeriodReport, error) {
-	return s.period(ctx, tgUserID, periodWeek)
+	return s.buildReport(ctx, tgUserID, periodWeek)
 }
 
 func (s *service) Month(ctx context.Context, tgUserID int64) (model.PeriodReport, error) {
-	return s.period(ctx, tgUserID, periodMonth)
+	return s.buildReport(ctx, tgUserID, periodMonth)
 }
 
-func (s *service) period(ctx context.Context, tgUserID int64, p period) (model.PeriodReport, error) {
-	const op = "service.expense.period"
+func (s *service) buildReport(ctx context.Context, tgUserID int64, p period) (model.PeriodReport, error) {
+	const op = "service.expense.buildReport"
+
 	var out model.PeriodReport
+	now := s.now()
+	start, end := periodRange(p, now)
 
 	err := s.tx.Do(ctx, func(db contracts.DBTX) error {
 		internalUserID, err := s.userRepo.GetIDByTgID(ctx, db, tgUserID)
@@ -113,77 +116,24 @@ func (s *service) period(ctx context.Context, tgUserID int64, p period) (model.P
 			if errors.Is(err, pgx.ErrNoRows) {
 				return model.ErrUserNotRegistered
 			}
-			return fmt.Errorf("%s: get internal user id: %w", op, err)
+			return fmt.Errorf("%s: get user: %w", op, err)
 		}
 
-		var rows []model.ExpenseWithCategory
-		switch p {
-		case periodToday:
-			rows, err = s.expRepo.GetTodayWithCategory(ctx, db, internalUserID)
-		case periodWeek:
-			rows, err = s.expRepo.GetWeekWithCategory(ctx, db, internalUserID)
-		case periodMonth:
-			rows, err = s.expRepo.GetMonthWithCategory(ctx, db, internalUserID)
-		default:
-			rows, err = s.expRepo.GetTodayWithCategory(ctx, db, internalUserID)
-		}
-
+		rows, err := s.expRepo.GetPeriodWithCategory(ctx, db, internalUserID, start, end)
 		if err != nil {
 			return fmt.Errorf("%s: get expenses: %w", op, err)
 		}
 
-		now := s.now()
-		anchor, _ := periodRange(p, now)
-		out = buildPeriodReport(anchor, rows)
+		out = buildPeriodReport(start, rows)
 
 		return nil
 	})
+
 	if err != nil {
 		return model.PeriodReport{}, err
 	}
 
 	return out, nil
-}
-
-func buildPeriodReport(anchor time.Time, rows []model.ExpenseWithCategory) model.PeriodReport {
-
-	byCat := make(map[string]*model.CategoryReport)
-	var total int64
-
-	for _, r := range rows {
-		total += r.Amount
-
-		cr, ok := byCat[r.Category]
-		if !ok {
-			cr = &model.CategoryReport{Name: r.Category}
-			byCat[r.Category] = cr
-		}
-
-		cr.Total += r.Amount
-
-		cr.Items = append(cr.Items, model.ExpenseItem{
-			Amount:      r.Amount,
-			Description: r.Description,
-		})
-	}
-
-	cats := make([]model.CategoryReport, 0, len(byCat))
-	for _, v := range byCat {
-		cats = append(cats, *v)
-	}
-
-	sort.Slice(cats, func(i, j int) bool {
-		if cats[i].Total == cats[j].Total {
-			return cats[i].Name < cats[j].Name
-		}
-		return cats[i].Total > cats[j].Total
-	})
-
-	return model.PeriodReport{
-		Date:       anchor,
-		Categories: cats,
-		Total:      total,
-	}
 }
 
 func periodRange(p period, now time.Time) (start, end time.Time) {
@@ -212,5 +162,44 @@ func periodRange(p period, now time.Time) (start, end time.Time) {
 		start = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		end = start.AddDate(0, 0, 1)
 		return start, end
+	}
+}
+
+func buildPeriodReport(anchor time.Time, rows []model.ExpenseWithCategory) model.PeriodReport {
+	byCat := make(map[string]*model.CategoryReport)
+	var total int64
+
+	for _, r := range rows {
+		total += r.Amount
+
+		cr, ok := byCat[r.Category]
+		if !ok {
+			cr = &model.CategoryReport{Name: r.Category}
+			byCat[r.Category] = cr
+		}
+
+		cr.Total += r.Amount
+		cr.Items = append(cr.Items, model.ExpenseItem{
+			Amount:      r.Amount,
+			Description: r.Description,
+		})
+	}
+
+	cats := make([]model.CategoryReport, 0, len(byCat))
+	for _, v := range byCat {
+		cats = append(cats, *v)
+	}
+
+	sort.Slice(cats, func(i, j int) bool {
+		if cats[i].Total == cats[j].Total {
+			return cats[i].Name < cats[j].Name
+		}
+		return cats[i].Total > cats[j].Total
+	})
+
+	return model.PeriodReport{
+		Date:       anchor,
+		Categories: cats,
+		Total:      total,
 	}
 }
