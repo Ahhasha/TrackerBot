@@ -2,11 +2,13 @@ package category
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
 	expense "github.com/Ahhasha/Tracker-bot/internal/contracts/expense"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
+	"github.com/jackc/pgx/v5"
 )
 
 type postgresRepo struct{}
@@ -27,7 +29,10 @@ func (r *postgresRepo) GetByName(ctx context.Context, db contracts.DBTX, userID 
 	var cat model.Category
 	err := db.QueryRow(ctx, q, userID, name).Scan(&cat.ID, &cat.UserID, &cat.Name, &cat.CreatedAt)
 	if err != nil {
-		return model.Category{}, fmt.Errorf("%s: scan: %w", op, err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Category{}, model.ErrCategoryNotFound
+		}
+		return model.Category{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return cat, nil

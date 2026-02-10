@@ -2,10 +2,13 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
 	expense "github.com/Ahhasha/Tracker-bot/internal/contracts/expense"
+	"github.com/Ahhasha/Tracker-bot/internal/model"
+	"github.com/jackc/pgx/v5"
 )
 
 type postgresRepo struct{}
@@ -21,7 +24,10 @@ func (r *postgresRepo) GetIDByTgID(ctx context.Context, db contracts.DBTX, tgUse
 	var internalUserID int64
 	err := db.QueryRow(ctx, q, tgUserID).Scan(&internalUserID)
 	if err != nil {
-		return 0, fmt.Errorf("%s: scan: %w", op, err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, model.ErrUserNotRegistered
+		}
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 	return internalUserID, nil
 }
