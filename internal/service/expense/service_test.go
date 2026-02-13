@@ -29,7 +29,9 @@ func TestService_AddExpense_HappyPath(t *testing.T) {
 	catRepo := mocks.NewMockCategoryRepository(ctrl)
 	userRepo := mocks.NewMockUserRepository(ctrl)
 
-	now := func() time.Time { return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC) }
+	now := func() time.Time {
+		return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	}
 
 	var _ expCon.Service = expense.NewService(tx, expRepo, catRepo, userRepo, now)
 	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
@@ -76,7 +78,9 @@ func TestService_AddExpense_InvalidCategory(t *testing.T) {
 	catRepo := mocks.NewMockCategoryRepository(ctrl)
 	userRepo := mocks.NewMockUserRepository(ctrl)
 
-	now := func() time.Time { return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC) }
+	now := func() time.Time {
+		return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	}
 	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
 
 	tx.EXPECT().Do(gomock.Any(), gomock.Any()).Times(0)
@@ -103,7 +107,9 @@ func TestService_AddExpense_UserNotRegistered(t *testing.T) {
 	catRepo := mocks.NewMockCategoryRepository(ctrl)
 	userRepo := mocks.NewMockUserRepository(ctrl)
 
-	now := func() time.Time { return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC) }
+	now := func() time.Time {
+		return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	}
 	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
 
 	tgUserID := int64(777)
@@ -139,7 +145,9 @@ func TestService_AddExpense_UserRepoError_Wrapped(t *testing.T) {
 	catRepo := mocks.NewMockCategoryRepository(ctrl)
 	userRepo := mocks.NewMockUserRepository(ctrl)
 
-	now := func() time.Time { return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC) }
+	now := func() time.Time {
+		return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	}
 	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
 
 	tgUserID := int64(777)
@@ -183,7 +191,9 @@ func TestService_AddExpense_CategoryNotFound(t *testing.T) {
 	catRepo := mocks.NewMockCategoryRepository(ctrl)
 	userRepo := mocks.NewMockUserRepository(ctrl)
 
-	now := func() time.Time { return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC) }
+	now := func() time.Time {
+		return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	}
 	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
 
 	tgUserID := int64(777)
@@ -223,7 +233,9 @@ func TestService_AddExpense_CategoryRepoError_Wrapped(t *testing.T) {
 	catRepo := mocks.NewMockCategoryRepository(ctrl)
 	userRepo := mocks.NewMockUserRepository(ctrl)
 
-	now := func() time.Time { return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC) }
+	now := func() time.Time {
+		return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	}
 	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
 
 	tgUserID := int64(777)
@@ -267,7 +279,9 @@ func TestService_AddExpense_ValidateError_ReturnIs(t *testing.T) {
 	catRepo := mocks.NewMockCategoryRepository(ctrl)
 	userRepo := mocks.NewMockUserRepository(ctrl)
 
-	now := func() time.Time { return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC) }
+	now := func() time.Time {
+		return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	}
 	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
 
 	tgUserID := int64(777)
@@ -310,7 +324,9 @@ func TestService_AddExpense_CreateError_Wrapped(t *testing.T) {
 	catRepo := mocks.NewMockCategoryRepository(ctrl)
 	userRepo := mocks.NewMockUserRepository(ctrl)
 
-	now := func() time.Time { return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC) }
+	now := func() time.Time {
+		return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	}
 	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
 
 	tgUserID := int64(777)
@@ -341,4 +357,125 @@ func TestService_AddExpense_CreateError_Wrapped(t *testing.T) {
 	require.ErrorIs(t, err, dbErr)
 	require.Contains(t, err.Error(), "service.expense.AddExpense")
 	require.Contains(t, err.Error(), "create expense")
+}
+
+func TestService_Today_HappyPath(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tx := mocks.NewMockTxManager(ctrl)
+	db := mocks.NewMockDBTX(ctrl)
+
+	expRepo := mocks.NewMockExpenseRepository(ctrl)
+	catRepo := mocks.NewMockCategoryRepository(ctrl)
+	userRepo := mocks.NewMockUserRepository(ctrl)
+
+	now := func() time.Time {
+		return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	}
+
+	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
+
+	tgUserID := int64(777)
+	internalUserID := int64(10)
+
+	expectedStart := time.Date(2026, 2, 13, 0, 0, 0, 0, time.UTC)
+	expectedEnd := time.Date(2026, 2, 14, 0, 0, 0, 0, time.UTC)
+
+	rows := []model.ExpenseWithCategory{
+		{Amount: 500, Description: "кофе", Category: "Еда"},
+		{Amount: 300, Description: "метро", Category: "Транспорт"},
+	}
+
+	tx.EXPECT().Do(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(contracts.DBTX) error) error {
+		return fn(db)
+	})
+
+	userRepo.EXPECT().GetIDByTgID(gomock.Any(), db, tgUserID).Return(internalUserID, nil)
+
+	expRepo.EXPECT().GetPeriodWithCategory(gomock.Any(), db, internalUserID, expectedStart, expectedEnd).Return(rows, nil)
+
+	report, err := svc.Today(ctx, tgUserID)
+
+	require.NoError(t, err)
+
+	require.Equal(t, int64(800), report.Total)
+	require.Len(t, report.Categories, 2)
+
+	require.Equal(t, "Еда", report.Categories[0].Name)
+	require.Equal(t, int64(500), report.Categories[0].Total)
+
+	require.Equal(t, "Транспорт", report.Categories[1].Name)
+	require.Equal(t, int64(300), report.Categories[1].Total)
+}
+
+func TestService_Today_UserNotRegistered(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tx := mocks.NewMockTxManager(ctrl)
+	db := mocks.NewMockDBTX(ctrl)
+
+	expRepo := mocks.NewMockExpenseRepository(ctrl)
+	catRepo := mocks.NewMockCategoryRepository(ctrl)
+	userRepo := mocks.NewMockUserRepository(ctrl)
+
+	now := func() time.Time {
+		return time.Now()
+	}
+
+	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
+
+	tx.EXPECT().Do(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(contracts.DBTX) error) error {
+		return fn(db)
+	})
+
+	userRepo.EXPECT().GetIDByTgID(gomock.Any(), db, int64(777)).Return(int64(0), pgx.ErrNoRows)
+
+	expRepo.EXPECT().GetPeriodWithCategory(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	_, err := svc.Today(ctx, 777)
+
+	require.ErrorIs(t, err, model.ErrUserNotRegistered)
+}
+
+func TestService_Today_GetExpensesError_Wrapped(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tx := mocks.NewMockTxManager(ctrl)
+	db := mocks.NewMockDBTX(ctrl)
+
+	expRepo := mocks.NewMockExpenseRepository(ctrl)
+	catRepo := mocks.NewMockCategoryRepository(ctrl)
+	userRepo := mocks.NewMockUserRepository(ctrl)
+
+	now := func() time.Time {
+		return time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	}
+
+	svc := expense.NewService(tx, expRepo, catRepo, userRepo, now)
+
+	tgUserID := int64(777)
+	internalUserID := int64(10)
+
+	tx.EXPECT().Do(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(contracts.DBTX) error) error {
+		return fn(db)
+	})
+
+	userRepo.EXPECT().GetIDByTgID(gomock.Any(), db, tgUserID).Return(internalUserID, nil)
+
+	dbErr := errors.New("select failed")
+
+	expRepo.EXPECT().GetPeriodWithCategory(gomock.Any(), db, internalUserID, gomock.Any(), gomock.Any()).Return(nil, dbErr)
+
+	_, err := svc.Today(ctx, tgUserID)
+
+	require.Error(t, err)
+	require.ErrorIs(t, err, dbErr)
+	require.Contains(t, err.Error(), "service.expense.buildReport")
+	require.Contains(t, err.Error(), "get expenses")
 }
