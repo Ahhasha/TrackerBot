@@ -157,3 +157,37 @@ func TestRepo_GetPeriodWithCategory_ScanError(t *testing.T) {
 
 	require.NoError(t, db.ExpectationsWereMet())
 }
+
+func TestRepo_GetPeriodWithCategory_RowsErr(t *testing.T) {
+	ctx := context.Background()
+
+	db, err := pgxmock.NewConn()
+	require.NoError(t, err)
+	defer db.Close(ctx)
+
+	repo := expRepo.NewPostgresRepo()
+
+	userID := int64(7)
+	start := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 2, 2, 0, 0, 0, 0, time.UTC)
+
+	q := `SELECT .* FROM expenses .* JOIN categories .*`
+
+	dbErr := errors.New("rows iteration failed")
+
+	rows := pgxmock.NewRows([]string{"amount", "description", "name", "created_at"}).
+		AddRow(int64(500), "кофе", "Еда", time.Date(2026, 2, 1, 12, 0, 0, 0, time.UTC)).
+		CloseError(dbErr)
+
+	db.ExpectQuery(q).
+		WithArgs(userID, start, end).
+		WillReturnRows(rows)
+
+	got, err := repo.GetPeriodWithCategory(ctx, db, userID, start, end)
+
+	require.Error(t, err)
+	require.Nil(t, got)
+	require.ErrorIs(t, err, dbErr)
+
+	require.NoError(t, db.ExpectationsWereMet())
+}
