@@ -30,9 +30,7 @@ func TestRepo_ExpenseCreate_HappyPath(t *testing.T) {
 
 	q := `INSERT INTO expenses .* RETURNING id`
 
-	db.ExpectQuery(q).
-		WithArgs(in.UserID, in.Amount, in.CategoryID, in.Description).
-		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int64(42)))
+	db.ExpectQuery(q).WithArgs(in.UserID, in.Amount, in.CategoryID, in.Description).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int64(42)))
 
 	id, err := repo.Create(ctx, db, in)
 	require.NoError(t, err)
@@ -56,9 +54,7 @@ func TestRepo_ExpenseCreate_ScanError(t *testing.T) {
 
 	dbErr := errors.New("db cancelled")
 
-	db.ExpectQuery(q).
-		WithArgs(in.UserID, in.Amount, in.CategoryID, in.Description).
-		WillReturnError(dbErr)
+	db.ExpectQuery(q).WithArgs(in.UserID, in.Amount, in.CategoryID, in.Description).WillReturnError(dbErr)
 
 	id, err := repo.Create(ctx, db, in)
 	require.Error(t, err)
@@ -83,13 +79,9 @@ func TestRepo_GetPeriodWithCategory_HappyPath(t *testing.T) {
 
 	q := `SELECT .* FROM expenses .* JOIN categories .* ORDER BY .*`
 
-	rows := pgxmock.NewRows([]string{"amount", "description", "name", "created_at"}).
-		AddRow(int64(500), "кофе", "Еда", time.Date(2026, 2, 1, 12, 0, 0, 0, time.UTC)).
-		AddRow(int64(300), "метро", "Транспорт", time.Date(2026, 2, 1, 9, 0, 0, 0, time.UTC))
+	rows := pgxmock.NewRows([]string{"amount", "description", "name", "created_at"}).AddRow(int64(500), "кофе", "Еда", time.Date(2026, 2, 1, 12, 0, 0, 0, time.UTC)).AddRow(int64(300), "метро", "Транспорт", time.Date(2026, 2, 1, 9, 0, 0, 0, time.UTC))
 
-	db.ExpectQuery(q).
-		WithArgs(userID, start, end).
-		WillReturnRows(rows)
+	db.ExpectQuery(q).WithArgs(userID, start, end).WillReturnRows(rows)
 
 	got, err := repo.GetPeriodWithCategory(ctx, db, userID, start, end)
 	require.NoError(t, err)
@@ -112,9 +104,7 @@ func TestRepo_GetPeriodWithCategory_QueryError(t *testing.T) {
 	dbErr := errors.New("query failed")
 	q := `SELECT .* FROM expenses .* JOIN categories .*`
 
-	db.ExpectQuery(q).
-		WithArgs(int64(7), pgxmock.AnyArg(), pgxmock.AnyArg()).
-		WillReturnError(dbErr)
+	db.ExpectQuery(q).WithArgs(int64(7), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(dbErr)
 
 	got, err := repo.GetPeriodWithCategory(ctx, db, 7, time.Now(), time.Now().Add(time.Hour))
 	require.Error(t, err)
@@ -141,13 +131,9 @@ func TestRepo_GetPeriodWithCategory_ScanError(t *testing.T) {
 
 	dbErr := errors.New("scan failed")
 
-	rows := pgxmock.NewRows([]string{"amount", "description", "name", "created_at"}).
-		AddRow(int64(500), "кофе", "Еда", time.Date(2026, 2, 1, 12, 0, 0, 0, time.UTC)).
-		RowError(0, dbErr)
+	rows := pgxmock.NewRows([]string{"amount", "description", "name", "created_at"}).AddRow(int64(500), "кофе", "Еда", time.Date(2026, 2, 1, 12, 0, 0, 0, time.UTC)).RowError(0, dbErr)
 
-	db.ExpectQuery(q).
-		WithArgs(userID, start, end).
-		WillReturnRows(rows)
+	db.ExpectQuery(q).WithArgs(userID, start, end).WillReturnRows(rows)
 
 	got, err := repo.GetPeriodWithCategory(ctx, db, userID, start, end)
 
@@ -175,13 +161,9 @@ func TestRepo_GetPeriodWithCategory_RowsErr(t *testing.T) {
 
 	dbErr := errors.New("rows iteration failed")
 
-	rows := pgxmock.NewRows([]string{"amount", "description", "name", "created_at"}).
-		AddRow(int64(500), "кофе", "Еда", time.Date(2026, 2, 1, 12, 0, 0, 0, time.UTC)).
-		CloseError(dbErr)
+	rows := pgxmock.NewRows([]string{"amount", "description", "name", "created_at"}).AddRow(int64(500), "кофе", "Еда", time.Date(2026, 2, 1, 12, 0, 0, 0, time.UTC)).CloseError(dbErr)
 
-	db.ExpectQuery(q).
-		WithArgs(userID, start, end).
-		WillReturnRows(rows)
+	db.ExpectQuery(q).WithArgs(userID, start, end).WillReturnRows(rows)
 
 	got, err := repo.GetPeriodWithCategory(ctx, db, userID, start, end)
 
