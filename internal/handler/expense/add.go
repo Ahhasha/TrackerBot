@@ -56,7 +56,7 @@ func (h *AddHandler) Handle(ctx context.Context, cmd *model.Command) (model.Resu
 		case errors.Is(err, model.ErrCategoryNotFound):
 			return model.Result{
 				ChatID: cmd.ChatID,
-				Text:   "❌ Категория не найдена. Используйте /categories",
+				Text:   "❌ Используйте /start",
 			}, nil
 
 		case errors.Is(err, model.ErrInvalidAmount):
