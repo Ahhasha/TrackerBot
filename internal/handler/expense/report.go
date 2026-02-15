@@ -7,6 +7,14 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 )
 
+type period string
+
+const (
+	periodToday period = "today"
+	periodWeek  period = "week"
+	periodMonth period = "month"
+)
+
 func formatPeriodReport(p period, rep model.PeriodReport) string {
 	title := periodTitle(p)
 

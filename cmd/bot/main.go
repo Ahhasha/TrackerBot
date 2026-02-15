@@ -13,6 +13,7 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/config"
 	"github.com/Ahhasha/Tracker-bot/internal/database"
 	expenseHandler "github.com/Ahhasha/Tracker-bot/internal/handler/expense"
+	"github.com/Ahhasha/Tracker-bot/internal/handler/help"
 	"github.com/Ahhasha/Tracker-bot/internal/handler/start"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 	categoryRepo "github.com/Ahhasha/Tracker-bot/internal/repository/category"
@@ -25,6 +26,13 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
+)
+
+const (
+	workersCount      = 10
+	updatesBufferSize = 100
+	resultsBufferSize = 100
+	shutdownTimeout   = 5 * time.Second
 )
 
 func main() {
@@ -66,14 +74,15 @@ func main() {
 	expenseRepository := expenseRepo.NewPostgresRepo()
 	categoryRepository := categoryRepo.NewPostgresRepo()
 
-	regService := serv.NewService(txManager, startRepository, logger)
-	expenseService := expenseService.NewService(txManager, expenseRepository, categoryRepository, userRepository, time.Now)
+	regSvc := serv.NewService(txManager, startRepository, logger)
+	expSvc := expenseService.NewService(txManager, expenseRepository, categoryRepository, userRepository, time.Now)
 
-	startHandler := start.New(logger, regService)
-	addHandler := expenseHandler.NewAdd(expenseService, logger)
-	todayHandler := expenseHandler.NewToday(expenseService, logger)
-	weekHandler := expenseHandler.NewWeek(expenseService, logger)
-	monthHandler := expenseHandler.NewMonth(expenseService, logger)
+	startHandler := start.New(logger, regSvc)
+	addHandler := expenseHandler.NewAdd(expSvc, logger)
+	todayHandler := expenseHandler.NewToday(expSvc, logger)
+	weekHandler := expenseHandler.NewWeek(expSvc, logger)
+	monthHandler := expenseHandler.NewMonth(expSvc, logger)
+	helpHandler := help.New(logger)
 
 	r := router.New(map[model.CommandName]router.Handler{
 		model.CommandStart: startHandler,
@@ -81,6 +90,7 @@ func main() {
 		model.CommandToday: todayHandler,
 		model.CommandWeek:  weekHandler,
 		model.CommandMonth: monthHandler,
+		model.CommandHelp:  helpHandler,
 	}, logger)
 
 	app := app.NewBot(bot, r, logger)

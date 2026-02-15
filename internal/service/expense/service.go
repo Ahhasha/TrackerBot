@@ -65,18 +65,18 @@ func (s *service) AddExpense(ctx context.Context, tgUserID int64, req expense.Ex
 			return fmt.Errorf("%s: get category: %w", op, err)
 		}
 
-		expense := model.Expense{
+		exp := model.Expense{
 			UserID:      internalUserID,
 			Amount:      req.Amount,
 			CategoryID:  category.ID,
 			Description: req.Description,
 		}
 
-		if err := expense.Validate(); err != nil {
+		if err := exp.Validate(); err != nil {
 			return err
 		}
 
-		expenseID, err = s.expRepo.Create(ctx, db, expense)
+		expenseID, err = s.expRepo.Create(ctx, db, exp)
 		if err != nil {
 			return fmt.Errorf("%s: create expense: %w", op, err)
 		}

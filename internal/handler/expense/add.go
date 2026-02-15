@@ -12,21 +12,27 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 )
 
+const (
+	maxAddAmount      = int64(1_000_000_000)
+	maxCategoryLen    = 32
+	maxDescriptionLen = 200
+)
+
 type AddHandler struct {
 	service expense.Service
-	logger  *slog.Logger
+	log     *slog.Logger
 }
 
-func NewAdd(service expense.Service, logger *slog.Logger) *AddHandler {
+func NewAdd(service expense.Service, log *slog.Logger) *AddHandler {
 	return &AddHandler{
 		service: service,
-		logger:  logger,
+		log:     log,
 	}
 }
 
 func (h *AddHandler) Handle(ctx context.Context, cmd *model.Command) (model.Result, error) {
 	const op = "handler.add.Handle"
-	log := h.logger.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
+	log := h.log.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
 	log.Info("handle /add")
 
 	req, err := h.parseAddArgs(cmd.RawArgs)
@@ -41,6 +47,41 @@ func (h *AddHandler) Handle(ctx context.Context, cmd *model.Command) (model.Resu
 				/add 1500 еда обед в кафе
 				/add 500 транспорт такси до работы
 				/add 3000 развлечения кино`,
+		}, nil
+	}
+
+	if req.Amount <= 0 {
+		return model.Result{
+			ChatID: cmd.ChatID,
+			Text:   "❌ Сумма должна быть положительным числом. Пример: /add 500 еда обед",
+		}, nil
+	}
+	if req.Amount > maxAddAmount {
+		return model.Result{
+			ChatID: cmd.ChatID,
+			Text:   fmt.Sprintf("❌ Слишком большая сумма. Максимум: %d ₽", maxAddAmount),
+		}, nil
+	}
+
+	req.Category = strings.TrimSpace(req.Category)
+	if req.Category == "" {
+		return model.Result{
+			ChatID: cmd.ChatID,
+			Text:   "❌ Категория не указана. Пример: /add 500 еда обед",
+		}, nil
+	}
+	if len([]rune(req.Category)) > maxCategoryLen {
+		return model.Result{
+			ChatID: cmd.ChatID,
+			Text:   fmt.Sprintf("❌ Слишком длинное название категории (макс. %d символов)", maxCategoryLen),
+		}, nil
+	}
+
+	req.Description = strings.TrimSpace(req.Description)
+	if len([]rune(req.Description)) > maxDescriptionLen {
+		return model.Result{
+			ChatID: cmd.ChatID,
+			Text:   fmt.Sprintf("❌ Слишком длинное описание (макс. %d символов)", maxDescriptionLen),
 		}, nil
 	}
 

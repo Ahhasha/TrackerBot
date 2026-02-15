@@ -11,28 +11,20 @@ import (
 
 type TodayHandler struct {
 	service expense.Service
-	logger  *slog.Logger
+	log     *slog.Logger
 }
 
-func NewToday(service expense.Service, logger *slog.Logger) *TodayHandler {
+func NewToday(service expense.Service, log *slog.Logger) *TodayHandler {
 	return &TodayHandler{
 		service: service,
-		logger:  logger,
+		log:     log,
 	}
 }
-
-type period string
-
-const (
-	periodToday period = "today"
-	periodWeek  period = "week"
-	periodMonth period = "month"
-)
 
 func (h *TodayHandler) Handle(ctx context.Context, cmd *model.Command) (model.Result, error) {
 	const op = "handler.expense.Today"
 
-	log := h.logger.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
+	log := h.log.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
 	log.Info("handle /today")
 
 	rep, err := h.service.Today(ctx, cmd.UserID)

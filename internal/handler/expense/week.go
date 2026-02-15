@@ -11,20 +11,20 @@ import (
 
 type WeekHandler struct {
 	service expense.Service
-	logger  *slog.Logger
+	log     *slog.Logger
 }
 
-func NewWeek(service expense.Service, logger *slog.Logger) *WeekHandler {
+func NewWeek(service expense.Service, log *slog.Logger) *WeekHandler {
 	return &WeekHandler{
 		service: service,
-		logger:  logger,
+		log:     log,
 	}
 }
 
 func (h *WeekHandler) Handle(ctx context.Context, cmd *model.Command) (model.Result, error) {
 	const op = "handler.expense.Week"
 
-	log := h.logger.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
+	log := h.log.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
 	log.Info("handle /week")
 
 	rep, err := h.service.Week(ctx, cmd.UserID)
