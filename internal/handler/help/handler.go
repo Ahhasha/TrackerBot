@@ -27,7 +27,7 @@ func (h *HelpHandler) Handle(ctx context.Context, cmd *model.Command) (model.Res
 
 	text := `📊 Доступные команды:
 			/start — регистрация и создание категорий
-			/add <категория> <сумма> — добавить расход
+			/add <сумма> <категория> — добавить расход
 			/today — расходы за сегодня
 			/week — расходы за неделю
 			/month — расходы за месяц
