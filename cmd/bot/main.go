@@ -29,10 +29,7 @@ import (
 )
 
 const (
-	workersCount      = 10
-	updatesBufferSize = 100
-	resultsBufferSize = 100
-	shutdownTimeout   = 5 * time.Second
+	shutdownTimeout = 5 * time.Second
 )
 
 func main() {
@@ -118,7 +115,7 @@ func main() {
 		close(done)
 	}()
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer shutdownCancel()
 
 	select {
