@@ -11,13 +11,13 @@ import (
 
 type MonthHandler struct {
 	service expense.Service
-	log  *slog.Logger
+	log     *slog.Logger
 }
 
 func NewMonth(service expense.Service, log *slog.Logger) *MonthHandler {
 	return &MonthHandler{
 		service: service,
-		log:  log,
+		log:     log,
 	}
 }
 
@@ -47,4 +47,5 @@ func (h *MonthHandler) Handle(ctx context.Context, cmd *model.Command) (model.Re
 		ChatID: cmd.ChatID,
 		Text:   text,
 	}, nil
+
 }
