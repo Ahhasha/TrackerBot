@@ -11,20 +11,20 @@ import (
 
 type MonthHandler struct {
 	service expense.Service
-	logger  *slog.Logger
+	log  *slog.Logger
 }
 
-func NewMonth(service expense.Service, logger *slog.Logger) *MonthHandler {
+func NewMonth(service expense.Service, log *slog.Logger) *MonthHandler {
 	return &MonthHandler{
 		service: service,
-		logger:  logger,
+		log:  log,
 	}
 }
 
 func (h *MonthHandler) Handle(ctx context.Context, cmd *model.Command) (model.Result, error) {
 	const op = "handler.expense.Month"
 
-	log := h.logger.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
+	log := h.log.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
 	log.Info("handle /month")
 
 	rep, err := h.service.Month(ctx, cmd.UserID)

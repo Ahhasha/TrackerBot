@@ -11,7 +11,6 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/contracts"
 	"github.com/Ahhasha/Tracker-bot/internal/contracts/expense"
 	"github.com/Ahhasha/Tracker-bot/internal/model"
-	"github.com/jackc/pgx/v5"
 )
 
 type service struct {
@@ -52,7 +51,7 @@ func (s *service) AddExpense(ctx context.Context, tgUserID int64, req expense.Ex
 	err := s.tx.Do(ctx, func(db contracts.DBTX) error {
 		internalUserID, err := s.userRepo.GetIDByTgID(ctx, db, tgUserID)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
+			if errors.Is(err, model.ErrUserNotRegistered) {
 				return model.ErrUserNotRegistered
 			}
 			return fmt.Errorf("%s: get internal user id: %w", op, err)
@@ -60,24 +59,24 @@ func (s *service) AddExpense(ctx context.Context, tgUserID int64, req expense.Ex
 
 		category, err := s.catRepo.GetByName(ctx, db, internalUserID, req.Category)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
+			if errors.Is(err, model.ErrCategoryNotFound) {
 				return model.ErrCategoryNotFound
 			}
 			return fmt.Errorf("%s: get category: %w", op, err)
 		}
 
-		expense := model.Expense{
+		exp := model.Expense{
 			UserID:      internalUserID,
 			Amount:      req.Amount,
 			CategoryID:  category.ID,
 			Description: req.Description,
 		}
 
-		if err := expense.Validate(); err != nil {
+		if err := exp.Validate(); err != nil {
 			return err
 		}
 
-		expenseID, err = s.expRepo.Create(ctx, db, expense)
+		expenseID, err = s.expRepo.Create(ctx, db, exp)
 		if err != nil {
 			return fmt.Errorf("%s: create expense: %w", op, err)
 		}
@@ -113,7 +112,7 @@ func (s *service) buildReport(ctx context.Context, tgUserID int64, p period) (mo
 	err := s.tx.Do(ctx, func(db contracts.DBTX) error {
 		internalUserID, err := s.userRepo.GetIDByTgID(ctx, db, tgUserID)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
+			if errors.Is(err, model.ErrUserNotRegistered) {
 				return model.ErrUserNotRegistered
 			}
 			return fmt.Errorf("%s: get user: %w", op, err)

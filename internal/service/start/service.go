@@ -10,16 +10,16 @@ import (
 )
 
 type service struct {
-	tx     contracts.TxManager
-	repo   startcont.RegistrationRepo
-	logger *slog.Logger
+	tx   contracts.TxManager
+	repo startcont.RegistrationRepo
+	log  *slog.Logger
 }
 
-func NewService(tx contracts.TxManager, repo startcont.RegistrationRepo, logger *slog.Logger) startcont.RegistrationService {
+func NewService(tx contracts.TxManager, repo startcont.RegistrationRepo, log *slog.Logger) startcont.RegistrationService {
 	return &service{
-		tx:     tx,
-		repo:   repo,
-		logger: logger,
+		tx:   tx,
+		repo: repo,
+		log:  log,
 	}
 }
 
@@ -53,9 +53,9 @@ func (s *service) Register(ctx context.Context, tgID int64, username string) (st
 	}
 
 	if res.Created {
-		s.logger.Info("user registered", slog.Int64("tg_id", tgID), slog.Int64("user_id", res.UserID))
+		s.log.Info("user registered", slog.Int64("tg_id", tgID), slog.Int64("user_id", res.UserID))
 	} else {
-		s.logger.Info("user already exists", slog.Int64("tg_id", tgID), slog.Int64("user_id", res.UserID))
+		s.log.Info("user already exists", slog.Int64("tg_id", tgID), slog.Int64("user_id", res.UserID))
 	}
 	return res, nil
 }

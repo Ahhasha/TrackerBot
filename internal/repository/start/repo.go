@@ -52,7 +52,7 @@ func (r *postgresRepo) UpsertUser(ctx context.Context, db contracts.DBTX, tgID i
 }
 
 func (r *postgresRepo) CreateDefaultCategories(ctx context.Context, db contracts.DBTX, userID int64) ([]string, error) {
-	const op = "repo.start.CreateDefaultCategory"
+	const op = "repo.start.CreateDefaultCategories"
 	defaults := []string{"Еда", "Транспорт", "Прочее", "Развлечения"}
 
 	const q = `

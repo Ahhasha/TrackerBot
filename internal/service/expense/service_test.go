@@ -12,7 +12,6 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/model"
 	"github.com/Ahhasha/Tracker-bot/internal/service/expense"
 	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/require"
 )
 
@@ -119,12 +118,11 @@ func TestService_AddExpense_UserNotRegistered(t *testing.T) {
 		Description: "обед",
 	}
 
-	tx.EXPECT().
-		Do(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(contracts.DBTX) error) error {
+	tx.EXPECT().Do(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(contracts.DBTX) error) error {
 		return fn(db)
 	})
 
-	userRepo.EXPECT().GetIDByTgID(gomock.Any(), db, tgUserID).Return(int64(0), pgx.ErrNoRows)
+	userRepo.EXPECT().GetIDByTgID(gomock.Any(), db, tgUserID).Return(int64(0), model.ErrUserNotRegistered)
 
 	gotID, err := svc.AddExpense(ctx, tgUserID, req)
 
@@ -211,7 +209,7 @@ func TestService_AddExpense_CategoryNotFound(t *testing.T) {
 
 	userRepo.EXPECT().GetIDByTgID(gomock.Any(), db, tgUserID).Return(internalUserID, nil)
 
-	catRepo.EXPECT().GetByName(gomock.Any(), db, internalUserID, req.Category).Return(model.Category{}, pgx.ErrNoRows)
+	catRepo.EXPECT().GetByName(gomock.Any(), db, internalUserID, req.Category).Return(model.Category{}, model.ErrCategoryNotFound)
 
 	expRepo.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
@@ -432,7 +430,7 @@ func TestService_Today_UserNotRegistered(t *testing.T) {
 		return fn(db)
 	})
 
-	userRepo.EXPECT().GetIDByTgID(gomock.Any(), db, int64(777)).Return(int64(0), pgx.ErrNoRows)
+	userRepo.EXPECT().GetIDByTgID(gomock.Any(), db, int64(777)).Return(int64(0), model.ErrUserNotRegistered)
 
 	expRepo.EXPECT().GetPeriodWithCategory(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 

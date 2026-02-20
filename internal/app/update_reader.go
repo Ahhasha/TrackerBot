@@ -2,15 +2,17 @@ package app
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+const telegramUpdateTimeoutSec = 60
+
 func (a *App) updateReader(ctx context.Context, updatesCh chan<- tgbot.Update) error {
 	const op = "app.updateReader"
 	u := tgbot.NewUpdate(0)
-	u.Timeout = 60
+	u.Timeout = telegramUpdateTimeoutSec
 	updates := a.bot.GetUpdatesChan(u)
 
 	for {
@@ -26,7 +28,7 @@ func (a *App) updateReader(ctx context.Context, updatesCh chan<- tgbot.Update) e
 			case <-ctx.Done():
 				return nil
 			default:
-				return fmt.Errorf("%s: full channel", op)
+				a.log.Warn("updates channel full", slog.String("op", op), slog.Int("len", len(updatesCh)), slog.Int("cap", cap(updatesCh)))
 			}
 		}
 	}

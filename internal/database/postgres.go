@@ -22,18 +22,18 @@ func NewPool(ctx context.Context, cfg config.Config) (*pgxpool.Pool, error) {
 		cfg.DBSSLMode,
 	)
 
-	config, err := pgxpool.ParseConfig(dsn)
+	poolCfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("parse database url: %w", err)
 	}
 
-	config.MaxConns = 15
-	config.MinConns = 3
-	config.MaxConnLifetime = time.Hour
-	config.MaxConnIdleTime = 30 * time.Minute
-	config.HealthCheckPeriod = time.Minute
+	poolCfg.MaxConns = 15
+	poolCfg.MinConns = 3
+	poolCfg.MaxConnLifetime = time.Hour
+	poolCfg.MaxConnIdleTime = 30 * time.Minute
+	poolCfg.HealthCheckPeriod = time.Minute
 
-	pool, err := pgxpool.NewWithConfig(ctx, config)
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		return nil, fmt.Errorf("create connection pool: %w", err)
 	}

@@ -9,26 +9,26 @@ import (
 
 type Router struct {
 	handlers map[model.CommandName]Handler
-	lgr      *slog.Logger
+	log      *slog.Logger
 }
 
-func New(handlers map[model.CommandName]Handler, lgr *slog.Logger) *Router {
+func New(handlers map[model.CommandName]Handler, log *slog.Logger) *Router {
 	return &Router{
 		handlers: handlers,
-		lgr:      lgr,
+		log:      log,
 	}
 }
 
 func (r *Router) Route(ctx context.Context, cmd *model.Command) model.Result {
 	const op = "router.Route"
 	if cmd == nil {
-		r.lgr.Warn("nil command", slog.String("op", op))
+		r.log.Warn("nil command", slog.String("op", op))
 		return model.Result{
 			ChatID: 0,
 			Text:   "Unknown command",
 		}
 	}
-	log := r.lgr.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
+	log := r.log.With(slog.String("op", op), slog.String("cmd", string(cmd.Name)), slog.Int64("chat_id", cmd.ChatID), slog.Int64("tg_user_id", cmd.UserID))
 	h, ok := r.handlers[cmd.Name]
 	if !ok {
 		log.Info("unknown command")

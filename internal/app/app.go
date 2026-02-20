@@ -10,6 +10,12 @@ import (
 	"github.com/Ahhasha/Tracker-bot/internal/router"
 )
 
+const (
+	workersCount      = 10
+	updatesBufferSize = 100
+	resultsBufferSize = 100
+)
+
 type App struct {
 	bot    *tgbot.BotAPI
 	router *router.Router
@@ -25,11 +31,11 @@ func NewBot(bot *tgbot.BotAPI, r *router.Router, log *slog.Logger) *App {
 }
 
 func (a *App) Run(ctx context.Context) error {
-	updatesCh := make(chan tgbot.Update, 100)
-	resultsCh := make(chan model.Result, 100)
+	updatesCh := make(chan tgbot.Update, updatesBufferSize)
+	resultsCh := make(chan model.Result, resultsBufferSize)
 
 	go a.sender(ctx, resultsCh)
-	go a.workerPool(ctx, 10, updatesCh, resultsCh)
+	go a.workerPool(ctx, workersCount, updatesCh, resultsCh)
 
 	errCh := make(chan error, 1)
 	go func() {
